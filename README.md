@@ -1,142 +1,120 @@
 # Kalshi / Polymarket divergence scanner
 
 Finds markets that ask the same question on both venues and quote different
-odds. Python 3.11+, standard library only, no install and no admin rights.
+odds, then prices the difference against real order-book depth and both
+venues' fee schedules. Python 3.10+, standard library only, no install.
 
 ```
-python scanner.py                                   # default scan
-python scanner.py --arb-only                        # only edges that survive fees
-python scanner.py --min-confidence 0.7 --verbose    # stricter matching, print both rule sets
-python scanner.py --json out.json --csv out.csv     # machine-readable output
-python scanner.py --offline fixtures                # no network, sample data
+python scanner.py                       # scan with the CONFIG defaults
+python scanner.py review                # label the last scan's pairs by hand
+python scanner.py score                 # precision/recall of current thresholds
+python scanner.py sweep                 # find better thresholds from your labels
 ```
 
-## Your network blocks both venues
+Every knob also lives in the `CONFIG` block at the top of `scanner.py` — edit
+it and press Run; no command line needed. Flags override CONFIG.
 
-The wincollad proxy returns a block page for `api.elections.kalshi.com` and
-`*.polymarket.com`. The scanner detects that and says so rather than failing
-with a JSON parse error. To get live data, run it off that network, or point it
-through a proxy:
-
-```powershell
-$env:HTTPS_PROXY = "http://host:port"
-python scanner.py
-```
-
-Both APIs are public and read-only, so no keys or accounts are needed to scan.
+Run the tests with `python tests.py` (35 tests, no network needed).
 
 ## How a match is decided
 
 Text similarity alone marries markets that are not the same bet, so the score
-combines four signals:
+combines signals and then subtracts structural penalties:
 
 | Signal | Weight | What it measures |
 | --- | --- | --- |
-| Question text | 0.55 | TF-IDF cosine plus a sequence ratio over the titles |
-| Resolution rules | 0.28 | Same, over Kalshi `rules_primary` vs the Polymarket description |
-| Settlement date | 0.17 | How close the two close times are |
-| Numeric thresholds | penalty | Compares the largest figure on each side |
+| Question text | 0.55 | TF-IDF cosine plus a character ratio over the titles |
+| Resolution rules | 0.28 | Token-vector cosine, Kalshi rules vs Polymarket description |
+| Settlement date | 0.17 | Kalshi `expiration_time` vs Polymarket `endDate` |
 
-Penalties then subtract from that base:
+Penalties, each earned by a real false positive from live runs:
 
-- **Thresholds differ** (−0.40): "S&P 500 above 7000" vs "above 7500" shares
-  every word and most of its numbers. This is the trap that catches out naive
-  matchers, and it is the reason the largest magnitude is compared directly.
-- **Direction disagrees** (−0.35): one side says above, the other below.
-- **Polarity flip** (−0.15): "will the US enter a recession" vs "will the US
-  avoid a recession". These are complements, so YES on one is NO on the other.
-  When this fires the scanner refuses to quote an edge at all — a wrong sign
-  here turns a 56-point "opportunity" into two losing legs.
+- **Thresholds differ** (−0.40): "S&P above 7000" vs "above 7500". The largest
+  magnitude on each side is compared with 1% tolerance.
+- **Years differ** (−0.45): compared exactly, never with tolerance — 2026 and
+  2028 are 0.1% apart numerically and are different questions.
+- **Direction disagrees** (−0.35): above vs below.
+- **Polarity flip** (−0.15): "enter a recession" vs "avoid a recession" are
+  complements, so YES on one is NO on the other. When this fires the scanner
+  refuses to quote an edge at all.
+- **Ladder mismatch** (hard skip): Kalshi splits "who will X" into one contract
+  per outcome. A member's distinguishing tokens (the ones its siblings lack)
+  must appear on the Polymarket side, or the pair is dropped — this is what
+  stops "Will Letitia James be arrested" pairing with "Obama arrested".
+- **Implausible edge** (hidden by default): an edge above `max_plausible_edge`
+  (10pp) is treated as evidence the questions differ, not as free money. On
+  the first live run, all 25 top "opportunities" sat between 25 and 87pp, and
+  every single one was a mismatch.
 
-Candidate generation uses an inverted index over discriminative tokens, so a
-scan of ~4,000 markets per venue scores tens of thousands of plausible pairs
-rather than sixteen million arbitrary ones.
+Polymarket books whose outcomes are not literally Yes/No (e.g. Trump/Newsom)
+are refused rather than guessed at — assuming outcome[0] is YES silently
+inverts the contract, the most expensive mistake this program can make.
 
-## How the edge is calculated
+## How the edge is priced
 
-Two numbers are reported per pair.
+Three numbers per pair:
 
-**Mid gap** is the difference in implied probability. It is the "difference in
-odds" signal, and it ignores spreads. Useful for spotting stale books, not
-directly tradeable.
+- **Mid gap** — raw difference in implied probability. The "difference in
+  odds" signal; ignores spreads, not tradeable as-is.
+- **Edge** — what buying YES on one venue and NO on the other actually locks
+  in at your requested `size`, walking both order books level by level and
+  paying both venues' fees. Kalshi's taker fee is `0.07 · P·(1−P)` per
+  contract, rounded **up** to the next cent per order; Polymarket's varies by
+  category (0% geopolitics … 7% crypto) under the March 2026 V2 schedule.
+- **Annualised** — that edge compounded over the days until the later leg
+  settles, since capital is fully collateralised on both legs until then.
 
-**Executable edge** is what you would actually make. Both venues pay $1 per
-contract at settlement, so buying YES on one and NO on the other for less than
-$1 combined is locked profit:
+Pairs are priced twice: once on top-of-book to build a shortlist, then again
+after real depth arrives for the top `depth` pairs. Kalshi publishes resting
+bids on both sides, so its book is inverted into asks (a NO bid at 55c is a
+YES ask at 45c). On Polymarket, YES and NO are separate tokens with
+independent books — the complement of the YES bid is only a placeholder until
+the real NO book is fetched.
 
-```
-edge = 1 − (yes_ask on venue A + no_ask on venue B + fees)
-```
+## Tuning with your own labels
 
-Both directions are tried and the better one is reported. Ask prices are used,
-not mids, so you are paying the spread on both legs. On Polymarket the NO ask
-is derived as `1 − best YES bid`, the standard complement identity for linked
-binary tokens.
+`review` steps through the last scan one keystroke per pair; `score` reports
+precision and recall of the current gates against everything labelled;
+`sweep` shows what each threshold costs and grid-searches the best corner.
+24 labelled pairs from live runs ship as seeds — 18 of them mismatches, which
+is the honest base rate. Labels accumulate in `labels.json`.
 
-Fees: Kalshi takers pay `ceil(0.07 × contracts × P × (1−P))` cents, so the
-per-contract cost is roughly `0.07 × P × (1−P)` — about 1.75c at even money,
-which eats most small edges. Some series charge 0.035; use
-`--kalshi-fee-coeff 0.035` for those. Polymarket currently charges no trading
-fee, so `--poly-fee-bps` defaults to 0. Change it if that stops being true.
+The gate logic (`passes_gates`) is deliberately one function shared by the
+scanner and the harness, so the thresholds you measure are the thresholds you
+run.
 
-## Reading the output
+## When it finds nothing
 
-```
-[2] confidence 0.73   mid gap +7.5pp   executable edge +4.33pp  <-- RISKLESS EDGE
-    trade: buy YES polymarket / NO kalshi — pay $0.9567 for $1.00 at settlement
-```
+The attrition table on stderr counts every reason a market was dropped
+(overlapping counts intended — they show whether one filter or four emptied
+the pipeline). If a venue yields zero usable markets, the scanner prints the
+schema it actually received with sample values, so a renamed API field is
+visible on sight rather than a silent zero.
 
-"Riskless" only holds if the two markets really do resolve identically.
-Confidence is a text-similarity estimate, not a proof. Before trading a pair,
-read both rule sets in full (`--verbose` prints them) and check:
+## Blocked networks
 
-- **Resolution source.** "Coinbase spot at 5pm ET" and "Binance VWAP over the
-  final hour" are different bets that print nearly identical questions.
-- **Settlement timing.** Capital is locked until both legs pay out, and they
-  rarely pay on the same day. Polymarket's UMA oracle can take days to finalise
-  and can be disputed.
-- **Edge cases.** What happens if the event is cancelled, postponed, or the data
-  source stops publishing? Venues handle this differently.
-- **Depth.** The quoted ask is the top of the book. Size beyond it moves the
-  price and the edge disappears fast — often before you can fill the second leg.
+Some filtered networks (schools, workplaces) block both venues' APIs and
+serve an HTML block page instead. The scanner detects this and says so rather
+than dying on a JSON parse error. Options: run it elsewhere, set
+`$env:HTTPS_PROXY`, or point `--offline` at a directory containing
+`kalshi.json` and `polymarket.json` (see `fixtures/` for the format).
 
-Lowering `--min-confidence` below the 0.55 default surfaces far more pairs, and
-most of the new ones are false. In the sample data, a 24.8pp "riskless edge"
-appears at confidence 0.31 — it is the S&P 7000 vs 7500 mismatch, and taking it
-would lose money on both legs.
-
-## Useful flags
-
-| Flag | Default | Purpose |
-| --- | --- | --- |
-| `--min-edge` | 0.03 | Minimum gap or edge, as a probability |
-| `--min-confidence` | 0.55 | Match confidence floor |
-| `--arb-only` | off | Hide pairs with no post-fee edge |
-| `--sort` | arb | `arb`, `gap`, or `confidence` |
-| `--min-volume-kalshi` | 100 | Contracts traded |
-| `--min-volume-poly` | 5000 | USD traded |
-| `--max-date-diff` | 45 | Reject pairs settling this many days apart |
-| `--max-days-out` | 400 | Ignore far-dated markets |
-| `--max-candidates` | 40 | Polymarket candidates scored per Kalshi market |
-| `--cache-ttl` | 300 | Seconds before refetching; raw data is cached |
-| `--offline DIR` | — | Read `kalshi.json` and `polymarket.json` from DIR |
-
-Cached responses land in `cache/`. They hold unfiltered API data, so lowering a
-volume threshold does not force a refetch.
+Both APIs are public and read-only; scanning needs no account or keys.
 
 ## Files
 
-- `scanner.py` — the whole tool
+- `scanner.py` — the whole tool, CONFIG block at the top
+- `tests.py` — offline test suite
 - `fixtures/` — sample data covering a true arb, a threshold mismatch, and a
-  polarity flip; used by `--offline`
+  polarity flip
+- `labels.json`, `last_run.json`, `cache/` — created at runtime, gitignored
 
-## Caveats
+## Before trading a pair
 
-- Only binary markets are compared. Polymarket entries with more than two
-  outcomes are skipped; Kalshi multi-candidate events work because each
-  candidate is already its own binary contract.
-- A Kalshi market is matched to at most one Polymarket market — its best
-  candidate.
-- Prices are snapshots. By the time you read the report they have moved.
-- Trading either venue requires an account there, and both restrict access by
-  jurisdiction. Scanning public data does not.
+"Locked profit" holds only if both contracts resolve identically. Confidence
+is a text-similarity estimate, not a proof. Check, in order: the resolution
+source (Coinbase 5pm ET and Binance VWAP are different bets), settlement
+timing (Polymarket's UMA oracle can take days and be disputed), cancellation
+and postponement clauses, and whether the venues are even legal for you to
+trade — both restrict by jurisdiction. The quoted edge is also a snapshot;
+the second leg often moves before you can fill it.

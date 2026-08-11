@@ -95,11 +95,37 @@ visible on sight rather than a silent zero.
 
 Some filtered networks (schools, workplaces) block both venues' APIs and
 serve an HTML block page instead. The scanner detects this and says so rather
-than dying on a JSON parse error. Options: run it elsewhere, set
-`$env:HTTPS_PROXY`, or point `--offline` at a directory containing
-`kalshi.json` and `polymarket.json` (see `fixtures/` for the format).
+than dying on a JSON parse error.
+
+If the machine you use is permanently behind such a filter, don't fight it —
+run the scan somewhere else and read the results here. The **Run on GitHub
+Actions** section below does exactly that: the code runs on GitHub's servers,
+which aren't behind the filter, and commits the report back to this repo where
+the browser can read it.
+
+For a one-off local run on an unfiltered machine you can also set
+`$env:HTTPS_PROXY`, or point `--offline` at a directory of `kalshi.json` and
+`polymarket.json` (see `fixtures/` for the format).
 
 Both APIs are public and read-only; scanning needs no account or keys.
+
+## Run on GitHub Actions
+
+`.github/workflows/scan.yml` runs the scanner on GitHub's own servers and
+commits the output to `results/`. Nothing runs on your machine, so a local
+network filter never enters into it.
+
+1. Push this repo to GitHub (already done if you cloned it from there).
+2. Open the **Actions** tab, pick **scan**, and press **Run workflow** — or
+   wait for the daily schedule.
+3. When it finishes, read `results/latest.txt` in the repo. `latest.json` and
+   `latest.csv` sit beside it, and `run.log` holds the progress and any errors.
+
+Public repositories get unlimited Actions minutes, so you can raise the
+schedule (the `cron` line) or trigger it by hand as often as you like. One
+caveat worth a first test: GitHub's runners live in a US datacentre, so if a
+venue geo-restricts its data API the depth pass may fall back to top-of-book —
+`run.log` will show it if so.
 
 ## Files
 

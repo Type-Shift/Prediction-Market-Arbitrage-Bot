@@ -1,0 +1,50 @@
+name: scan
+
+# Runs the scanner on GitHub's servers, which are not behind a school or
+# workplace content filter, and commits the results back to the repo so they
+# are readable in the browser. Trigger it by hand from the Actions tab
+# (Run workflow), or let the schedule below run it.
+
+on:
+  workflow_dispatch:        # the "Run workflow" button in the Actions tab
+  schedule:
+    - cron: "0 7 * * *"     # 07:00 UTC daily; edit or delete this line freely
+
+permissions:
+  contents: write           # lets the job commit results back to the repo
+
+concurrency:
+  group: scan               # never let two scans commit over each other
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the scanner
+        run: |
+          mkdir -p results
+          # Report to a text file, machine-readable copies alongside it.
+          # `|| true` so a fetch failure still commits the log for diagnosis.
+          python scanner.py scan \
+            --json results/latest.json \
+            --csv  results/latest.csv \
+            > results/latest.txt 2> results/run.log || true
+          echo "last run (UTC): $(date -u +%FT%TZ)" > results/last_run_time.txt
+
+      - name: Show the report in the run log
+        run: cat results/latest.txt || echo "(no report — see results/run.log)"
+
+      - name: Commit results
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add results
+          git commit -m "scan results $(date -u +%FT%TZ)" || echo "nothing changed"
+          git push

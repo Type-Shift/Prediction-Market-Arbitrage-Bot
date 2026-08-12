@@ -29,6 +29,17 @@
 
   <div class="topbar-spacer"></div>
 
+  <!-- Only shown when app.py is serving the page; a static copy has nothing
+       to run a scan with. live.js unhides it. -->
+  <div class="run-controls" id="run-controls" hidden>
+    <button class="btn primary" id="btn-scan">Run scan</button>
+    <span class="run-status" id="run-status" hidden>
+      <span class="spinner"></span>
+      <span class="run-line" id="run-line">starting…</span>
+      <span class="run-elapsed" id="run-elapsed"></span>
+    </span>
+  </div>
+
   <div class="topbar-actions">
     <button class="btn ghost" id="btn-load" title="Load a scan file from disk">Load scan…</button>
     <button class="btn ghost icon" id="btn-theme" title="Toggle light / dark" aria-label="Toggle theme">
@@ -47,6 +58,7 @@
   <button class="tab" data-view="lab">Threshold lab</button>
   <button class="tab" data-view="labels">Labels<span class="tab-count" id="tab-count-labels"></span></button>
   <button class="tab" data-view="trends">Trends</button>
+  <button class="tab" data-view="bot" id="tab-bot" hidden>Bot<span class="tab-count" id="tab-count-bot"></span></button>
 </nav>
 
 <main id="main">
@@ -127,6 +139,9 @@
   <!-- ── trends ──────────────────────────────────────────────────────── -->
   <section class="view" id="view-trends"></section>
 
+  <!-- ── bot (live mode only) ────────────────────────────────────────── -->
+  <section class="view" id="view-bot"></section>
+
 </main>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -135,9 +150,13 @@
 <input type="file" id="filepick" multiple accept=".json,.log,.txt" hidden>
 
 <!-- Plain classic scripts, loaded in dependency order: app.js defines the
-     shared state and helpers, the other two add views on top of it. -->
+     shared state and helpers, the rest add views on top of it. live.js and
+     bot.js are inert unless app.py is serving the page — without a backend
+     they leave the original static dashboard exactly as it was. -->
 <script src="app.js"></script>
 <script src="drawer.js"></script>
 <script src="views.js"></script>
+<script src="live.js"></script>
+<script src="bot.js"></script>
 </body>
 </html>

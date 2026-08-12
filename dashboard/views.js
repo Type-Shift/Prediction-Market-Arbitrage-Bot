@@ -233,7 +233,7 @@
     const reasons = new Map();
     for (const pair of App.pairs) {
       const [ok, why] = App.passesGates(pair.confidence, pair.rules_similarity, pair.edge, t);
-      const survives = ok && (Math.abs(pair.mid_gap) >= t.min_edge || pair.edge >= t.min_edge);
+      const survives = ok && App.passesEdgeFloor(pair, t);
       if (survives) { kept++; continue; }
       cut++;
       const label = ok ? "below the edge floor" : why;
@@ -523,6 +523,12 @@
     svg.append(first, last);
     return svg;
   }
+
+  // The Bot tab draws its equity curve with this too — one chart, one set of
+  // edge cases (flat series, single point) already worked out.
+  App.lineChart = lineChart;
+  App.panel = panel;
+  App.statTile = statTile;
 
   const SERIES = [
     ["Opportunities kept", "kept", (v) => String(Math.round(v))],

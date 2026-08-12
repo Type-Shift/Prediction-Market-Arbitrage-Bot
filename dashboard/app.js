@@ -79,6 +79,7 @@ function passesEdgeFloor(pair, t) {
 }
 
 App.passesGates = passesGates;
+App.passesEdgeFloor = passesEdgeFloor;
 
 /** Same key `review`/`score` use to join a label to a pair. */
 const labelKey = (pair) => `${pair.kalshi.id}|${pair.polymarket.url}`;
@@ -478,10 +479,13 @@ App.download = download;
 
 /* ── view switching ────────────────────────────────────────────────────── */
 
-const VIEWS = ["board", "pipeline", "lab", "labels", "trends"];
+const VIEWS = ["board", "pipeline", "lab", "labels", "trends", "bot"];
 
 function showView(name) {
   if (!VIEWS.includes(name)) name = "board";
+  // The bot only exists when a backend is running it. Deep-linking #bot from a
+  // static copy would otherwise land on a permanently empty tab.
+  if (name === "bot" && !App.live) name = "board";
   App.view = name;
   if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
   for (const tab of document.querySelectorAll(".tab")) {
@@ -495,8 +499,25 @@ function showView(name) {
   if (name === "lab") App.renderLab();
   if (name === "labels") App.renderLabels();
   if (name === "trends") App.renderTrends();
+  if (name === "bot") App.renderBot();
 }
 App.showView = showView;
+
+/**
+ * Redraw everything that depends on the data, after it changed underneath us.
+ *
+ * The page was built for data that arrives once and never moves, so each
+ * mutation site calls the two or three renderers it happens to know about. A
+ * live backend breaks that assumption: a scan finishing replaces every number
+ * on the page. Only the active view is redrawn — the others rebuild from
+ * scratch on switch anyway.
+ */
+function refresh() {
+  renderFreshness();
+  renderKpis();
+  showView(App.view);
+}
+App.refresh = refresh;
 
 /* ── theme ─────────────────────────────────────────────────────────────── */
 
@@ -574,6 +595,10 @@ function start() {
   App.labels = App.labels.length ? App.labels : loadStoredLabels();
   $("view-loading").classList.remove("is-active");
   $("tabs").hidden = false;
+  // Both are meaningless without a backend to scan and to trade: a static copy
+  // shows the same five tabs it always did.
+  $("tab-bot").hidden = !App.live;
+  $("run-controls").hidden = !App.live;
   renderFreshness();
   renderKpis();
   showView(location.hash.slice(1) || "board");
@@ -612,7 +637,11 @@ function init() {
     if (tab) showView(tab.dataset.view);
   });
 
-  loadFromServer().then(start).catch((err) => {
+  // live.js, if it loaded, probes for a backend and loads from the API
+  // instead. Without it — a static copy, or GitHub Pages — this is unchanged.
+  const boot = App.bootLive ? App.bootLive(loadFromServer) : loadFromServer();
+
+  boot.then(start).catch((err) => {
     if (location.protocol === "file:") {
       $("load-title").textContent = "Serve the repo, or drop the files in";
       $("load-body").textContent = "";

@@ -3,5 +3,6 @@ cache/
 last_run.json
 labels.json
 paper.json
+bot.json
 out.json
 out.csv

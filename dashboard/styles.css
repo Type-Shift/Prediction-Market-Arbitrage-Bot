@@ -782,3 +782,125 @@ table.plain tr:last-child td { border-bottom: none; }
   color: var(--text-dim);
 }
 .linkrow a:hover { color: var(--text); border-color: var(--text-faint); }
+
+/* ── live mode: run controls in the topbar ───────────────────────────── */
+/*
+ * Hidden unless app.py is serving the page. A static copy keeps the topbar it
+ * always had.
+ */
+
+.run-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 16px;
+}
+.run-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.run-line {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  /* The scanner's lines vary from a word to a full attrition row; clamp them
+     so a long one cannot push the theme toggle off the edge. */
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.run-elapsed {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.spinner {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--text-dim);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 3s; }
+}
+
+/* ── bot tab ─────────────────────────────────────────────────────────── */
+
+.botbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 0 var(--gutter);
+  font-size: 12.5px;
+}
+.botstate {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+}
+.botstate.on { color: var(--pos); border-color: var(--pos); background: var(--pos-soft); }
+.botstate.off { color: var(--text-dim); }
+
+/* The standing reminder that none of this is real money, and on what terms the
+   settlement numbers were produced. It sits directly under the equity figures
+   on purpose. */
+.bot-caveat {
+  margin: 0 0 var(--gutter);
+  padding: 9px 12px;
+  border-left: 2px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--text-dim);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.toggle input { accent-color: var(--kalshi); }
+.toggle-label { color: var(--text); }
+
+.notes {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.notes li { margin: 3px 0; }
+
+.runlog {
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 11px 13px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+}

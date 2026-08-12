@@ -27,8 +27,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Every suite, not just the scanner's. All four are stdlib-only and
+      # offline, so there is nothing to install and nothing to reach.
       - name: Run the tests
-        run: python tests.py
+        run: |
+          python tests.py
+          python test_allocator.py
+          python test_bot.py
+          python test_app.py
 
       - name: Run the scanner
         run: |

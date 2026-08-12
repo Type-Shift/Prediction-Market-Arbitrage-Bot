@@ -2,5 +2,6 @@ __pycache__/
 cache/
 last_run.json
 labels.json
+paper.json
 out.json
 out.csv

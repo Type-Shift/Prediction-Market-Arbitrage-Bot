@@ -27,14 +27,22 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Run the tests
+        run: python tests.py
+
       - name: Run the scanner
         run: |
           mkdir -p results
           # Report to a text file, machine-readable copies alongside it.
+          # --meta and --history-dir feed the dashboard: the first is this
+          # run's thresholds and funnel counts, the second appends a dated
+          # snapshot so the trend charts have points to draw.
           # `|| true` so a fetch failure still commits the log for diagnosis.
           python scanner.py scan \
             --json results/latest.json \
             --csv  results/latest.csv \
+            --meta results/meta.json \
+            --history-dir results/history \
             > results/latest.txt 2> results/run.log || true
           echo "last run (UTC): $(date -u +%FT%TZ)" > results/last_run_time.txt
 

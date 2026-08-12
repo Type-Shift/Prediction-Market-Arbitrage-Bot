@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- The root carries no data-theme attribute until the viewer picks one, so
+     an unvisited page follows the system's light/dark preference. -->
+<meta name="color-scheme" content="dark light">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divergence Scanner</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>◆</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◆</span>
+    <span class="brand-name">DIVERGENCE</span>
+    <span class="brand-sub">kalshi &times; polymarket</span>
+  </div>
+
+  <div class="freshness" id="freshness" hidden>
+    <span class="dot" id="fresh-dot"></span>
+    <span class="freshness-text">
+      <strong id="fresh-rel">—</strong>
+      <span class="muted" id="fresh-abs"></span>
+    </span>
+  </div>
+
+  <div class="topbar-spacer"></div>
+
+  <div class="topbar-actions">
+    <button class="btn ghost" id="btn-load" title="Load a scan file from disk">Load scan…</button>
+    <button class="btn ghost icon" id="btn-theme" title="Toggle light / dark" aria-label="Toggle theme">
+      <span data-theme-icon>☾</span>
+    </button>
+  </div>
+</header>
+
+<div class="banner error" id="banner-error" hidden></div>
+
+<section class="kpis" id="kpis" hidden></section>
+
+<nav class="tabs" id="tabs" hidden>
+  <button class="tab is-active" data-view="board">Opportunities<span class="tab-count" id="tab-count-board"></span></button>
+  <button class="tab" data-view="pipeline">Pipeline</button>
+  <button class="tab" data-view="lab">Threshold lab</button>
+  <button class="tab" data-view="labels">Labels<span class="tab-count" id="tab-count-labels"></span></button>
+  <button class="tab" data-view="trends">Trends</button>
+</nav>
+
+<main id="main">
+
+  <!-- ── loading / no-data state ─────────────────────────────────────── -->
+  <section class="view is-active" id="view-loading">
+    <div class="empty">
+      <div class="empty-mark">◆</div>
+      <h1 class="empty-title" id="load-title">Loading the last scan…</h1>
+      <p class="empty-body" id="load-body">Reading <code>results/latest.json</code>.</p>
+
+      <div class="loadbox" id="loadbox" hidden>
+        <p class="empty-body">
+          Browsers block reading local files over <code>file://</code>. Either serve the
+          repo — <code class="cmd">python -m http.server 8000</code>, then open
+          <code class="cmd">localhost:8000/dashboard/</code> — or drop the scan files here.
+        </p>
+        <div class="dropzone" id="dropzone">
+          <strong>Drop <code>latest.json</code> here</strong>
+          <span class="muted">optionally with <code>meta.json</code>, <code>run.log</code>, <code>index.json</code>, <code>labels.json</code></span>
+          <button class="btn" id="btn-pick">Choose files…</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── board ───────────────────────────────────────────────────────── -->
+  <section class="view" id="view-board">
+    <div class="toolbar">
+      <div class="search">
+        <input type="search" id="q" placeholder="Search questions and rules…" autocomplete="off">
+      </div>
+      <div class="seg" id="sortseg" role="group" aria-label="Sort by">
+        <button data-sort="annualised" class="is-active">Annualised</button>
+        <button data-sort="edge">Edge</button>
+        <button data-sort="gap">Gap</button>
+        <button data-sort="confidence">Confidence</button>
+      </div>
+      <div class="chips" id="chips">
+        <button class="chip" data-filter="warned">Has warnings</button>
+        <button class="chip" data-filter="depth">Depth-priced</button>
+        <button class="chip" data-filter="rules">Rules comparable</button>
+        <button class="chip" data-filter="soon">Settles &lt; 30d</button>
+      </div>
+      <div class="toolbar-spacer"></div>
+      <button class="btn ghost" id="btn-export-csv" title="Export the rows currently in view">Export CSV</button>
+    </div>
+
+    <div class="tablewrap">
+      <table class="board" id="board">
+        <thead>
+          <tr>
+            <th class="num">Edge</th>
+            <th class="num">Ann.</th>
+            <th class="num">Gap</th>
+            <th class="conf-col">Confidence</th>
+            <th class="num">Days</th>
+            <th>Leg</th>
+            <th class="markets-col">Markets</th>
+            <th class="flags-col">Flags</th>
+          </tr>
+        </thead>
+        <tbody id="board-body"></tbody>
+      </table>
+      <p class="empty-body pad" id="board-empty" hidden>Nothing matches these filters.</p>
+    </div>
+  </section>
+
+  <!-- ── pipeline ────────────────────────────────────────────────────── -->
+  <section class="view" id="view-pipeline"></section>
+
+  <!-- ── threshold lab ───────────────────────────────────────────────── -->
+  <section class="view" id="view-lab"></section>
+
+  <!-- ── labels ──────────────────────────────────────────────────────── -->
+  <section class="view" id="view-labels"></section>
+
+  <!-- ── trends ──────────────────────────────────────────────────────── -->
+  <section class="view" id="view-trends"></section>
+
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Pair detail"></aside>
+
+<input type="file" id="filepick" multiple accept=".json,.log,.txt" hidden>
+
+<!-- Plain classic scripts, loaded in dependency order: app.js defines the
+     shared state and helpers, the other two add views on top of it. -->
+<script src="app.js"></script>
+<script src="drawer.js"></script>
+<script src="views.js"></script>
+</body>
+</html>

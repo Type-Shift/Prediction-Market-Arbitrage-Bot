@@ -112,6 +112,14 @@ POLY_FEE_BY_CATEGORY = {
 POLY_FEE_DEFAULT = 0.05
 
 
+# Counters the pipeline fills in as it runs, so the same numbers that go to
+# stderr as prose are also available as data. stderr stays the human channel;
+# this is what --meta serialises for the dashboard. A module-level dict rather
+# than a return value because every stage from fetch to filter contributes,
+# and threading an accumulator through all of them would be noise.
+RUN_STATS: dict[str, float] = {}
+
+
 # ---------------------------------------------------------------------------
 # Text handling
 # ---------------------------------------------------------------------------
@@ -580,6 +588,8 @@ def fetch_kalshi(max_markets: int, horizon_days: int, scan_limit: int,
               or kalshi_price(r, "yes_bid") is not None]
     print(f"kalshi: scanned {len(raw)} open markets, {len(quoted)} carry a resting quote",
           file=sys.stderr)
+    RUN_STATS["kalshi_scanned"] = len(raw)
+    RUN_STATS["kalshi_quoted"] = len(quoted)
 
     pool = quoted or raw
     pool.sort(key=activity, reverse=True)
@@ -1367,6 +1377,8 @@ def report_attrition(reject: Counter, kalshi_raw: int, poly_raw: int,
 
 def scan(args) -> tuple[list[Pair], Counter]:
     reject: Counter = Counter()
+    RUN_STATS.clear()
+    RUN_STATS["started_at"] = time.time()
     kalshi_raw, poly_raw = load_raw(args)
 
     kalshi = [kalshi_to_market(r) for r in kalshi_raw]
@@ -1376,6 +1388,8 @@ def scan(args) -> tuple[list[Pair], Counter]:
     poly = apply_filters(poly, args.min_volume_poly, args.max_days_out, reject, "poly")
 
     report_attrition(reject, len(kalshi_raw), len(poly_raw), len(kalshi), len(poly))
+    RUN_STATS.update(kalshi_fetched=len(kalshi_raw), poly_fetched=len(poly_raw),
+                     kalshi_usable=len(kalshi), poly_usable=len(poly))
     if not kalshi:
         diagnose_quotes(kalshi_raw, "kalshi")
     if not poly:
@@ -1393,6 +1407,7 @@ def scan(args) -> tuple[list[Pair], Counter]:
         market.rule_vector = tfidf_vector(market.rule_tokens, rules_idf)
 
     ladder_members = mark_ladders(kalshi)
+    RUN_STATS["ladder_members"] = ladder_members
     if ladder_members:
         print(f"flagged {ladder_members} kalshi markets as one-of-N ladder members",
               file=sys.stderr)
@@ -1442,6 +1457,9 @@ def scan(args) -> tuple[list[Pair], Counter]:
           f"({skipped:,} skipped by prefilter, {skipped_ladder:,} by ladder rule), "
           f"{len(pairs)} above confidence "
           f"{args.min_confidence}", file=sys.stderr)
+    RUN_STATS.update(candidate_pairs=total, scored=scored, skipped_prefilter=skipped,
+                     skipped_ladder=skipped_ladder, above_confidence=len(pairs),
+                     scoring_seconds=round(time.time() - started, 1))
 
     overrides = {}
     if args.kalshi_fee_coeff is not None:
@@ -1463,6 +1481,7 @@ def scan(args) -> tuple[list[Pair], Counter]:
         # old order let fake 80pp edges monopolise the book budget.
         shortlist = ([p for p in eligible if not p.implausible]
                      + [p for p in eligible if p.implausible])[:args.depth]
+        RUN_STATS["depth_priced"] = len(shortlist)
         if shortlist:
             print(f"fetching order books for top {len(shortlist)} pairs...", file=sys.stderr)
             fetch_books([p.kalshi for p in shortlist] + [p.poly for p in shortlist],
@@ -1473,6 +1492,7 @@ def scan(args) -> tuple[list[Pair], Counter]:
     if not args.show_implausible:
         hidden = sum(1 for p in pairs if p.implausible)
         pairs = [p for p in pairs if not p.implausible]
+        RUN_STATS["hidden_implausible"] = hidden
         if hidden:
             print(f"hid {hidden} pair(s) with implausibly large edges "
                   f"(>{args.max_plausible_edge * 100:.0f}pp); --show-implausible to see them",
@@ -1493,7 +1513,9 @@ def scan(args) -> tuple[list[Pair], Counter]:
         pairs.sort(key=lambda p: p.confidence, reverse=True)
     else:
         pairs.sort(key=lambda p: p.edge, reverse=True)
-    return pairs[:args.top], reject
+    pairs = pairs[:args.top]
+    RUN_STATS["kept"] = len(pairs)
+    return pairs, reject
 
 
 # ---------------------------------------------------------------------------
@@ -1623,6 +1645,133 @@ def write_csv(path: str, pairs: list[Pair]) -> None:
                 "" if p.days_apart is None else f"{p.days_apart:.1f}",
                 "; ".join(p.warnings),
             ])
+
+
+# The number of history snapshots kept on disk. One scheduled run a day, so
+# this is roughly six months; older files are pruned to stop the repo growing
+# without bound.
+HISTORY_LIMIT = 180
+
+
+def run_meta(pairs: list[Pair], reject: Counter, args, error: str = "") -> dict:
+    """The machine-readable twin of what the run prints to stderr.
+
+    The stderr log is prose meant for a person watching a terminal. Parsing it
+    back out with regexes is how a dashboard silently starts lying the first
+    time a message is reworded, so the counters are published as data instead.
+    """
+    return {
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "scanner_version": "2.0",
+        "thresholds": {
+            "min_confidence": args.min_confidence,
+            "min_rules_sim": args.min_rules_sim,
+            "max_plausible_edge": args.max_plausible_edge,
+            "min_edge": args.min_edge,
+            "size": args.size,
+            "depth": args.depth,
+            "top": args.top,
+            "sort": args.sort,
+            "max_days_out": args.max_days_out,
+            "min_volume_kalshi": args.min_volume_kalshi,
+            "min_volume_poly": args.min_volume_poly,
+        },
+        "weights": {
+            "title": args.weight_title,
+            "rules": args.weight_rules,
+            "date": args.weight_date,
+        },
+        "fees": {
+            "kalshi": args.kalshi_fee_coeff if args.kalshi_fee_coeff is not None
+                      else KALSHI_FEE_DEFAULT,
+            "polymarket_default": args.poly_fee_coeff if args.poly_fee_coeff is not None
+                                  else POLY_FEE_DEFAULT,
+            "polymarket_by_category": POLY_FEE_BY_CATEGORY,
+        },
+        "funnel": {k: v for k, v in RUN_STATS.items() if k != "started_at"},
+        "dropped": dict(reject.most_common()),
+        "kept": len(pairs),
+        "errors": [error] if error else [],
+    }
+
+
+def write_meta(path: str, meta: dict) -> None:
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(meta, fh, indent=2)
+
+
+def slim_record(record: dict) -> dict:
+    """A pair record with the rule texts dropped.
+
+    Rules are most of the bytes in a scan (84 KB of which ~70 KB is rule prose)
+    and a trend chart never reads them. Keeping them out of every daily
+    snapshot is the difference between a repo that grows a few KB a day and one
+    that grows a megabyte a week.
+    """
+    slim = dict(record)
+    for venue in ("kalshi", "polymarket"):
+        side = dict(slim.get(venue) or {})
+        side.pop("rules", None)
+        slim[venue] = side
+    return slim
+
+
+def history_summary(filename: str, generated_at: str, records: list[dict]) -> dict:
+    edges = [r["edge"] for r in records]
+    annualised = [r["annualised"] for r in records if r.get("annualised") is not None]
+    confidences = sorted(r["confidence"] for r in records)
+    mid = (confidences[len(confidences) // 2] if confidences else None)
+    return {
+        "file": filename,
+        "generated_at": generated_at,
+        "kept": len(records),
+        "best_edge": max(edges) if edges else None,
+        "best_annualised": max(annualised) if annualised else None,
+        "median_confidence": mid,
+        "profit_at_size": round(sum(r["edge"] * (r.get("contracts") or 0)
+                                    for r in records), 2),
+    }
+
+
+def write_history(directory: str, records: list[dict], meta: dict,
+                  limit: int = HISTORY_LIMIT) -> str:
+    """Append this run to the dated snapshot set and prune the oldest.
+
+    Written per run rather than overwriting a `latest`, because a trend needs
+    points. The index carries the summary numbers so the dashboard reads one
+    small file instead of every snapshot it has ever kept.
+    """
+    os.makedirs(directory, exist_ok=True)
+    stamp = meta["generated_at"].replace(":", "-")
+    filename = f"{stamp}.json"
+    with open(os.path.join(directory, filename), "w", encoding="utf-8") as fh:
+        json.dump([slim_record(r) for r in records], fh, indent=2)
+
+    index_path = os.path.join(directory, "index.json")
+    index: list[dict] = []
+    try:
+        with open(index_path, encoding="utf-8") as fh:
+            loaded = json.load(fh)
+        if isinstance(loaded, list):
+            index = loaded
+    except (OSError, json.JSONDecodeError):
+        index = []
+
+    index = [row for row in index if row.get("file") != filename]
+    index.append(history_summary(filename, meta["generated_at"], records))
+    index.sort(key=lambda row: row.get("generated_at") or "")
+
+    for stale in index[:-limit]:
+        try:
+            os.remove(os.path.join(directory, stale["file"]))
+        except OSError:
+            pass
+    index = index[-limit:]
+
+    with open(index_path, "w", encoding="utf-8") as fh:
+        json.dump(index, fh, indent=2)
+    return filename
+
 
 # ---------------------------------------------------------------------------
 # Labelling and evaluation
@@ -1933,6 +2082,10 @@ def build_parser() -> argparse.ArgumentParser:
                    default="annualised")
     g.add_argument("--json", metavar="PATH")
     g.add_argument("--csv", metavar="PATH")
+    g.add_argument("--meta", metavar="PATH",
+                   help="write the run's thresholds and funnel counts as JSON")
+    g.add_argument("--history-dir", metavar="DIR",
+                   help="append a dated snapshot of this run for trend charts")
     g.add_argument("--verbose", action="store_true")
     g.add_argument("--target-recall", type=float, default=1.0,
                    help="sweep: lowest recall the grid search may settle for")
@@ -1975,11 +2128,16 @@ def main(argv: list[str] | None = None) -> int:
         return sweep(args)
 
     try:
-        pairs, _ = scan(args)
+        pairs, reject = scan(args)
     except FetchError as exc:
         print(f"error: {exc}", file=sys.stderr)
         print("hint: if you are behind a filtered network, set HTTPS_PROXY or "
               "point --offline at cached JSON.", file=sys.stderr)
+        # Still publish the metadata. A dashboard that shows "the last run
+        # failed, here is why" is worth more than one that silently keeps
+        # displaying yesterday's numbers as if they were current.
+        if args.meta:
+            write_meta(args.meta, run_meta([], Counter(), args, error=str(exc)))
         return 2
 
     sys.stdout.write(render(pairs, args))
@@ -2000,6 +2158,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.csv:
         write_csv(args.csv, pairs)
         print(f"wrote {args.csv}", file=sys.stderr)
+
+    meta = run_meta(pairs, reject, args)
+    if args.meta:
+        write_meta(args.meta, meta)
+        print(f"wrote {args.meta}", file=sys.stderr)
+    if args.history_dir:
+        snapshot = write_history(args.history_dir, records, meta)
+        print(f"wrote {os.path.join(args.history_dir, snapshot)}", file=sys.stderr)
 
     if pairs:
         unlabelled = len({label_key(r) for r in load_labels()})

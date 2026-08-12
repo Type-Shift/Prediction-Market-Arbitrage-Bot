@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Offline tests for scanner.py. No network required: python tests.py"""
 
+import json
+import os
+import shutil
+import tempfile
 import unittest
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import scanner as s
@@ -328,6 +333,90 @@ class TestScorePair(unittest.TestCase):
             # the pre-penalty base.)
             self.assertGreaterEqual(ceiling + 1e-9, pair.confidence,
                                     f"ceiling breached for {qk!r} / {qp!r}")
+
+
+class TestDashboardOutputs(unittest.TestCase):
+    """The files the dashboard reads: results/meta.json and results/history/."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir, True)
+
+    def records(self, n=3):
+        rows = []
+        for i in range(n):
+            k = make_market(question=f"q{i}")
+            p = make_market(venue="polymarket", question=f"q{i}")
+            pair = make_pair(k, p, confidence=0.5 + i / 100)
+            pair.edge = 0.01 * (i + 1)
+            pair.annualised = 0.1 * (i + 1)
+            pair.filled = 100
+            rows.append(s.pair_to_dict(pair))
+        return rows
+
+    def test_meta_reports_thresholds_and_funnel(self):
+        s.RUN_STATS.clear()
+        s.RUN_STATS.update(kalshi_usable=10, kept=2, started_at=1.0)
+        args = s.build_parser().parse_args(["scan", "--min-confidence", "0.6"])
+        meta = s.run_meta([], Counter({"poly: no live quote": 4}), args)
+
+        self.assertEqual(meta["thresholds"]["min_confidence"], 0.6)
+        self.assertEqual(meta["funnel"]["kalshi_usable"], 10)
+        # started_at is bookkeeping for the elapsed time, not a funnel count.
+        self.assertNotIn("started_at", meta["funnel"])
+        self.assertEqual(meta["dropped"]["poly: no live quote"], 4)
+        self.assertEqual(meta["errors"], [])
+        self.assertRegex(meta["generated_at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+    def test_meta_carries_the_fetch_error(self):
+        args = s.build_parser().parse_args(["scan"])
+        meta = s.run_meta([], Counter(), args, error="blocked by a network filter")
+        self.assertEqual(meta["errors"], ["blocked by a network filter"])
+
+    def test_history_snapshots_drop_the_rule_texts(self):
+        # Rules are most of the bytes and no chart reads them.
+        meta = {"generated_at": "2026-01-02T03:04:05Z"}
+        name = s.write_history(self.dir, self.records(), meta)
+        with open(os.path.join(self.dir, name), encoding="utf-8") as fh:
+            snapshot = json.load(fh)
+        self.assertEqual(name, "2026-01-02T03-04-05Z.json")
+        self.assertNotIn("rules", snapshot[0]["kalshi"])
+        self.assertNotIn("rules", snapshot[0]["polymarket"])
+        self.assertIn("question", snapshot[0]["kalshi"])
+        self.assertEqual(snapshot[0]["edge"], 0.01)
+
+    def test_history_index_appends_and_summarises(self):
+        for i, stamp in enumerate(["2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z"]):
+            s.write_history(self.dir, self.records(i + 1), {"generated_at": stamp})
+        with open(os.path.join(self.dir, "index.json"), encoding="utf-8") as fh:
+            index = json.load(fh)
+
+        self.assertEqual([row["kept"] for row in index], [1, 2])
+        self.assertEqual(index[-1]["best_edge"], 0.02)
+        self.assertEqual(index[-1]["profit_at_size"], 3.0)  # (0.01 + 0.02) * 100
+        # Sorted oldest first, so the trend charts can plot it as given.
+        self.assertLess(index[0]["generated_at"], index[1]["generated_at"])
+
+    def test_history_prunes_the_oldest_beyond_the_limit(self):
+        for day in range(1, 5):
+            s.write_history(self.dir, self.records(1),
+                            {"generated_at": f"2026-01-0{day}T00:00:00Z"}, limit=2)
+        with open(os.path.join(self.dir, "index.json"), encoding="utf-8") as fh:
+            index = json.load(fh)
+
+        self.assertEqual(len(index), 2)
+        self.assertEqual([row["file"] for row in index],
+                         ["2026-01-03T00-00-00Z.json", "2026-01-04T00-00-00Z.json"])
+        # The pruned entries take their snapshot files with them.
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "2026-01-01T00-00-00Z.json")))
+        self.assertTrue(os.path.exists(os.path.join(self.dir, "2026-01-04T00-00-00Z.json")))
+
+    def test_history_index_survives_a_corrupt_file(self):
+        with open(os.path.join(self.dir, "index.json"), "w", encoding="utf-8") as fh:
+            fh.write("{ not json")
+        s.write_history(self.dir, self.records(1), {"generated_at": "2026-01-01T00:00:00Z"})
+        with open(os.path.join(self.dir, "index.json"), encoding="utf-8") as fh:
+            self.assertEqual(len(json.load(fh)), 1)
 
 
 if __name__ == "__main__":

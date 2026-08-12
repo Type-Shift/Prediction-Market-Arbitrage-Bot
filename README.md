@@ -14,7 +14,9 @@ python scanner.py sweep                 # find better thresholds from your label
 Every knob also lives in the `CONFIG` block at the top of `scanner.py` — edit
 it and press Run; no command line needed. Flags override CONFIG.
 
-Run the tests with `python tests.py` (35 tests, no network needed).
+Run the tests with `python tests.py` (41 tests, no network needed).
+
+There is also a browser dashboard over the results — see **Dashboard** below.
 
 A companion paper-trading allocator, `allocator.py`, spreads a *simulated*
 bankroll across the pairs the scanner flags — see **Paper-trading allocator**
@@ -86,6 +88,48 @@ is the honest base rate. Labels accumulate in `labels.json`.
 The gate logic (`passes_gates`) is deliberately one function shared by the
 scanner and the harness, so the thresholds you measure are the thresholds you
 run.
+
+## Dashboard
+
+`dashboard/` is a browser view of the last scan. Same rule as the scanner: no
+install, no dependencies, no build step — static files reading the JSON
+that is already in `results/`.
+
+```
+python -m http.server 8000        # from the repo root
+```
+
+then open `http://localhost:8000/dashboard/`. A plain double-click on
+`index.html` also works, but browsers refuse to read local files over
+`file://`, so in that case the page asks you to drop `latest.json` onto it.
+To publish it, turn on GitHub Pages for the repo (Settings → Pages → deploy
+from `main`, root) and the dashboard is live at
+`https://<user>.github.io/<repo>/dashboard/`, refreshing itself every time the
+scheduled scan commits new results.
+
+Five views:
+
+- **Opportunities** — the pairs as a sortable, filterable board. Click a row
+  for the detail drawer: the confidence decomposition as a stacked bar, both
+  venues' quotes on one probability axis, the fee-to-net economics at your
+  size, and both rule texts side by side with their shared terms highlighted.
+  Any row is linkable: `?pair=<kalshi id>` reopens its drawer.
+- **Pipeline** — the attrition funnel as a chart, on a log scale because the
+  first stage is 30,000 markets and the last is 25.
+- **Threshold lab** — drag `min_confidence`, `min_rules_sim`,
+  `max_plausible_edge` and `min_edge` and watch the kept set change. Pairs the
+  new thresholds would drop stay on the board struck through, so a stricter
+  setting shows you its cost and not just its benefit. With labels loaded it
+  also reports live precision and recall.
+- **Labels** — the `review` keystroke loop in a browser, `m` / `x` / `s` and
+  all. Labels live in local storage since there is no server; export the file
+  into the repo as `labels.json` and `score` and `sweep` read it unchanged.
+- **Trends** — how the kept count, best edge and median confidence move run to
+  run, from the dated snapshots in `results/history/`.
+
+The one piece of logic that exists twice is `passes_gates`, mirrored in
+`dashboard/app.js` so the lab can re-run it without a server. It is a dozen
+lines and marked as a mirror in both files; change one and change the other.
 
 ## When it finds nothing
 
@@ -186,8 +230,11 @@ network filter never enters into it.
 1. Push this repo to GitHub (already done if you cloned it from there).
 2. Open the **Actions** tab, pick **scan**, and press **Run workflow** — or
    wait for the daily schedule.
-3. When it finishes, read `results/latest.txt` in the repo. `latest.json` and
-   `latest.csv` sit beside it, and `run.log` holds the progress and any errors.
+3. When it finishes, read `results/latest.txt` in the repo, or open the
+   dashboard. `latest.json` and `latest.csv` sit beside it, `meta.json` holds
+   the run's thresholds and funnel counts as data, `run.log` holds the progress
+   and any errors, and `history/` accumulates one dated snapshot per run
+   (rule texts stripped, most recent 180 kept).
 
 Public repositories get unlimited Actions minutes, so you can raise the
 schedule (the `cron` line) or trigger it by hand as often as you like. One
@@ -199,6 +246,11 @@ venue geo-restricts its data API the depth pass may fall back to top-of-book —
 
 - `scanner.py` — the whole tool, CONFIG block at the top
 - `tests.py` — offline test suite
+- `dashboard/` — the browser view: `index.html`, `styles.css`, `app.js`
+  (loading, board), `drawer.js` (detail drawer), `views.js` (pipeline, lab,
+  labels, trends)
+- `results/` — written by CI: `latest.{txt,json,csv}`, `meta.json`, `run.log`,
+  `history/`
 - `fixtures/` — sample data covering a true arb, a threshold mismatch, and a
   polarity flip
 - `labels.json`, `last_run.json`, `cache/` — created at runtime, gitignored

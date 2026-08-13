@@ -98,6 +98,8 @@
         <button data-sort="confidence">Confidence</button>
       </div>
       <div class="chips" id="chips">
+        <button class="chip" data-filter="confirmed">LLM match</button>
+        <button class="chip" data-filter="rejected">LLM mismatch</button>
         <button class="chip" data-filter="warned">Has warnings</button>
         <button class="chip" data-filter="depth">Depth-priced</button>
         <button class="chip" data-filter="rules">Rules comparable</button>
@@ -111,6 +113,7 @@
       <table class="board" id="board">
         <thead>
           <tr>
+            <th class="llm-col">LLM</th>
             <th class="num">Edge</th>
             <th class="num">Ann.</th>
             <th class="num">Gap</th>

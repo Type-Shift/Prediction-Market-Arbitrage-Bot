@@ -269,6 +269,16 @@ a readable summary. Default model is `claude-opus-5`; pass `--model
 claude-sonnet-5` for a cheaper pass, and use `score` to race the two on your
 own labels before trusting either.
 
+**The dashboard leads with it.** When `judged.json` is present, the
+Opportunities board reorders around the model's call — confirmed pairs rise to
+the top, the ones it flagged as mismatches sink to the bottom and are dimmed,
+whatever their edge — and each row carries a MATCH / LIKELY / MISMATCH badge.
+The detail drawer opens on the verdict: the divergence the model found, its
+per-check breakdown (source / timing / threshold), and its reasoning, above the
+rule texts. Two filter chips isolate the confirmed and the rejected. With no
+`judged.json`, the board is exactly as it was — the whole feature stays dark
+until the judge has run.
+
 ### The API key — never commit it
 
 `judge.py` reads the key from the **`ANTHROPIC_API_KEY` environment variable**

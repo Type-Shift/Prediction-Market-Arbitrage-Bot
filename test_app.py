@@ -262,5 +262,75 @@ class TestLabels(ServerCase):
         self.assertIn("expected a list", body["error"])
 
 
+class TestVerdictMerge(unittest.TestCase):
+    """with_verdicts joins results/judged.json onto records by pair identity."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir, True)
+        self._saved = app.RESULTS_DIR
+        app.RESULTS_DIR = os.path.join(self.dir, "results")
+        os.makedirs(app.RESULTS_DIR, exist_ok=True)
+        self.addCleanup(lambda: setattr(app, "RESULTS_DIR", self._saved))
+
+    @staticmethod
+    def _record(kid, url):
+        return {"kalshi": {"id": kid}, "polymarket": {"url": url}, "edge": 0.02}
+
+    def _write_judged(self, rows):
+        with open(os.path.join(app.RESULTS_DIR, "judged.json"), "w", encoding="utf-8") as fh:
+            json.dump(rows, fh)
+
+    def test_no_file_leaves_records_untouched(self):
+        recs = [self._record("K1", "U1")]
+        out = app.with_verdicts(recs)
+        self.assertIs(out, recs)
+        self.assertNotIn("llm_verdict", out[0])
+
+    def test_verdict_merged_by_identity_unmatched_is_none(self):
+        self._write_judged([dict(self._record("K1", "U1"),
+                                 llm_verdict={"verdict": "different", "confidence": 0.9})])
+        out = app.with_verdicts([self._record("K1", "U1"), self._record("K2", "U2")])
+        self.assertEqual(out[0]["llm_verdict"]["verdict"], "different")
+        self.assertIsNone(out[1]["llm_verdict"])  # present but empty, not silently absent
+
+    def test_merge_does_not_mutate_the_shared_records(self):
+        self._write_judged([dict(self._record("K1", "U1"),
+                                 llm_verdict={"verdict": "equivalent"})])
+        recs = [self._record("K1", "U1")]
+        app.with_verdicts(recs)
+        self.assertNotIn("llm_verdict", recs[0])  # the bot's copy stays clean
+
+    def test_pair_without_verdict_key_is_ignored(self):
+        self._write_judged([{"kalshi": {"id": "K1"}, "polymarket": {"url": "U1"}}])  # no llm_verdict
+        out = app.with_verdicts([self._record("K1", "U1")])
+        self.assertNotIn("llm_verdict", out[0])  # empty map → passthrough, untouched
+
+
+class TestVerdictInState(ServerCase):
+    def test_state_merges_verdicts_from_judged_json(self):
+        state = self.scan_and_wait()
+        self.assertTrue(state["pairs"], "need at least one pair to tag")
+        target = state["pairs"][0]
+        judged = [{
+            "kalshi": {"id": target["kalshi"]["id"]},
+            "polymarket": {"url": target["polymarket"]["url"]},
+            "llm_verdict": {"verdict": "equivalent", "confidence": 0.88,
+                            "divergence": "none found"},
+        }]
+        with open(os.path.join(app.RESULTS_DIR, "judged.json"), "w", encoding="utf-8") as fh:
+            json.dump(judged, fh)
+
+        _, state = self.get("/api/state")
+        tagged = next(p for p in state["pairs"]
+                      if p["kalshi"]["id"] == target["kalshi"]["id"])
+        self.assertEqual(tagged["llm_verdict"]["verdict"], "equivalent")
+        # A different pair carries the key as None, not missing.
+        others = [p for p in state["pairs"]
+                  if p["kalshi"]["id"] != target["kalshi"]["id"]]
+        if others:
+            self.assertIsNone(others[0]["llm_verdict"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

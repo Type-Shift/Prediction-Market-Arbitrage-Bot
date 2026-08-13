@@ -163,6 +163,59 @@ function drawerSection(title, ...children) {
   return s;
 }
 
+/**
+ * The model's verdict, first thing in the drawer.
+ *
+ * This is the section the terminal report and the lexical score cannot give
+ * you: a read of the actual resolution rules, and — when the two diverge — the
+ * one clause that makes them settle differently. It leads the drawer because a
+ * MISMATCH here overrides every green number below it.
+ */
+function verdictSection(pair) {
+  const info = App.verdictInfo(pair);
+  if (info.state === "unreviewed") {
+    return drawerSection("Model review",
+      el("p", "panel-note",
+        "Not sent to the model — only the most promising pairs of each scan are "
+        + "reviewed. The board's ordering and every number below come from the "
+        + "lexical scanner alone for this pair."));
+  }
+  if (info.state === "error") {
+    return drawerSection("Model review",
+      el("p", "panel-note",
+        "The model could not judge this pair: " + (info.detail || "unknown error") + "."));
+  }
+
+  const panel = el("div", "verdict-panel " + info.cls);
+  const head = el("div", "verdict-head");
+  head.append(el("span", "vbadge " + info.cls, info.label));
+  head.append(el("span", "muted", pct(info.confidence) + " confidence"
+    + (info.model ? " · " + info.model : "")));
+  panel.append(head);
+
+  const checks = el("div", "verdict-checks");
+  for (const [label, value] of [["source", info.resolution_source],
+                                ["timing", info.timing],
+                                ["threshold", info.threshold]]) {
+    const cls = value === "differs" ? "bad" : value === "same" ? "ok" : "";
+    checks.append(el("span", "vcheck " + cls, `${label}: ${value || "?"}`));
+  }
+  panel.append(checks);
+
+  if (info.divergence && !/^none/i.test(info.divergence.trim())) {
+    const d = el("p", "verdict-divergence");
+    d.append(el("strong", "", "DIVERGENCE"), document.createTextNode(" " + info.divergence));
+    panel.append(d);
+  }
+  if (info.reasoning) panel.append(el("p", "verdict-reasoning", info.reasoning));
+
+  const note = el("p", "panel-note");
+  note.textContent = "A model reading the rules adversarially, not a proof. It can "
+    + "miss a divergence or invent one — read both rule sets below before trading.";
+  panel.append(note);
+  return drawerSection("Model review", panel);
+}
+
 function openDrawer(pair) {
   const drawer = $("drawer");
   drawer.replaceChildren();
@@ -176,6 +229,8 @@ function openDrawer(pair) {
   close.addEventListener("click", closeDrawer);
   top.append(heading, close);
   drawer.append(top);
+
+  drawer.append(verdictSection(pair));
 
   const links = el("div", "linkrow");
   for (const side of [pair.kalshi, pair.polymarket]) {

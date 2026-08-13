@@ -541,6 +541,65 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
 .flag.warn { background: var(--warn-soft); color: var(--warn); }
 .flag.top  { background: var(--bg-inset); color: var(--text-dim); }
 
+/* ── the model's verdict (judge.py → results/judged.json) ────────────── */
+
+th.llm-col, td.llm-col { width: 78px; }
+.vcell { display: flex; }
+.vbadge {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  cursor: help;
+}
+.vbadge.v-match    { background: var(--pos-soft);  color: var(--pos); }
+.vbadge.v-likely   { background: var(--warn-soft); color: var(--warn); }
+.vbadge.v-mismatch { background: var(--neg-soft);  color: var(--neg); }
+.vbadge.v-none     { background: var(--bg-inset);  color: var(--text-faint); }
+
+/* A confirmed row is marked, not recoloured; a rejected one is dimmed like a
+   cut row but for a different reason, so the two reasons read differently. The
+   coloured edge on the first cell says which. Both survive `is-cut` stacking. */
+table.board tbody tr.is-llm-match td.llm-col { box-shadow: inset 2px 0 0 var(--pos); }
+table.board tbody tr.is-llm-mismatch { opacity: 0.55; }
+table.board tbody tr.is-llm-mismatch td.llm-col { box-shadow: inset 2px 0 0 var(--neg); }
+
+/* Drawer panel — leads the detail view. */
+.verdict-panel {
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--bg-raised);
+}
+.verdict-panel.v-match    { border-left-color: var(--pos); }
+.verdict-panel.v-likely   { border-left-color: var(--warn); }
+.verdict-panel.v-mismatch { border-left-color: var(--neg); }
+.verdict-panel.v-none     { border-left-color: var(--text-faint); }
+.verdict-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.verdict-checks { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.vcheck {
+  font-family: var(--mono);
+  font-size: 10px;
+  border-radius: 4px;
+  padding: 2px 7px;
+  background: var(--bg-inset);
+  color: var(--text-dim);
+}
+.vcheck.ok  { background: var(--pos-soft); color: var(--pos); }
+.vcheck.bad { background: var(--neg-soft); color: var(--neg); }
+.verdict-divergence { margin: 0 0 7px; font-size: 13px; line-height: 1.45; }
+.verdict-divergence strong {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--neg);
+  margin-right: 4px;
+}
+.verdict-reasoning { margin: 0 0 8px; font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
 /* ── generic panels used by pipeline / lab / labels / trends ─────────── */
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter); }

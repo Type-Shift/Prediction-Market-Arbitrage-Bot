@@ -336,6 +336,44 @@ def load_history() -> list:
     return index if isinstance(index, list) else []
 
 
+def verdict_key(record: dict) -> str:
+    """Pair identity — the same key judge.py, review and score all join on."""
+    k = record.get("kalshi") or {}
+    p = record.get("polymarket") or {}
+    return f"{k.get('id', '')}|{p.get('url', '')}"
+
+
+def load_verdicts() -> dict:
+    """Map pair identity → the model's verdict, from results/judged.json.
+
+    judge.py writes that file after a scan (in CI, or by hand) with each of the
+    top pairs carrying an `llm_verdict`. It is optional: with no key configured
+    the judge never runs, the file is absent, and this returns {} so the board
+    is exactly what it was before the model was ever involved.
+    """
+    judged = read_json(os.path.join(RESULTS_DIR, "judged.json"), [])
+    out: dict = {}
+    if isinstance(judged, list):
+        for pair in judged:
+            if isinstance(pair, dict) and pair.get("llm_verdict"):
+                out[verdict_key(pair)] = pair["llm_verdict"]
+    return out
+
+
+def with_verdicts(records: list[dict]) -> list[dict]:
+    """Records with each pair's model verdict merged in, keyed by identity.
+
+    A fresh copy per record — the shared list the bot also reads is never
+    mutated. Pairs the judge did not review (new since its last run, or beyond
+    its count) carry llm_verdict = None, shown as 'unreviewed' rather than
+    silently blank. With no judged.json, the records pass through untouched.
+    """
+    verdicts = load_verdicts()
+    if not verdicts:
+        return records
+    return [{**r, "llm_verdict": verdicts.get(verdict_key(r))} for r in records]
+
+
 def publish_results(pairs, records: list[dict], meta: dict, args) -> None:
     """Write the same files the CLI writes.
 
@@ -490,7 +528,7 @@ class Handler(SimpleHTTPRequestHandler):
         return {
             "live": True,
             "run": run,
-            "pairs": runner.records,
+            "pairs": with_verdicts(runner.records),
             "meta": runner.meta,
             "history": load_history(),
             "labels": scanner.load_labels(),

@@ -85,6 +85,54 @@ App.passesEdgeFloor = passesEdgeFloor;
 const labelKey = (pair) => `${pair.kalshi.id}|${pair.polymarket.url}`;
 App.labelKey = labelKey;
 
+/* ── the model's verdict (judge.py → results/judged.json) ──────────────── */
+
+// Tier drives ordering: lower is better, so the model's confirmations rise to
+// the top of the board and its rejections sink, whatever the edge — which is
+// the whole point of prioritising the judgement over the raw number. Tier 2 is
+// the middle ground: a pair the model never saw, or errored on.
+const VERDICT = {
+  equivalent:        { tier: 0, label: "MATCH",    cls: "v-match" },
+  likely_equivalent: { tier: 1, label: "LIKELY",   cls: "v-likely" },
+  different:         { tier: 3, label: "MISMATCH", cls: "v-mismatch" },
+};
+
+/** Normalise a pair's `llm_verdict` into something the board and drawer share. */
+function verdictInfo(pair) {
+  const v = pair.llm_verdict;
+  if (!v) return { tier: 2, state: "unreviewed", label: "", cls: "v-none" };
+  if (v.error) return { tier: 2, state: "error", label: "—", cls: "v-none", detail: v.error };
+  const base = VERDICT[v.verdict] || { tier: 2, label: v.verdict, cls: "v-none" };
+  return {
+    ...base, state: v.verdict,
+    confidence: v.confidence, divergence: v.divergence, reasoning: v.reasoning,
+    resolution_source: v.resolution_source, timing: v.timing,
+    threshold: v.threshold_and_polarity, model: v.model,
+  };
+}
+App.verdictInfo = verdictInfo;
+
+/** Join results/judged.json onto the loaded pairs by the same identity key. */
+function attachVerdicts(judged) {
+  if (!Array.isArray(judged)) return;
+  const map = new Map();
+  for (const p of judged) {
+    if (p && p.kalshi && p.polymarket && p.llm_verdict) {
+      map.set(`${p.kalshi.id}|${p.polymarket.url}`, p.llm_verdict);
+    }
+  }
+  for (const pair of App.pairs) {
+    const v = map.get(labelKey(pair));
+    if (v) pair.llm_verdict = v;
+  }
+}
+App.attachVerdicts = attachVerdicts;
+
+// True once any pair carries a verdict — gates the whole feature so a scan the
+// judge never touched looks exactly as it did before.
+const anyVerdicts = () => App.pairs.some((p) => p.llm_verdict);
+App.anyVerdicts = anyVerdicts;
+
 /* ── loading ───────────────────────────────────────────────────────────── */
 
 async function getJSON(path) {
@@ -165,6 +213,12 @@ function metaFromLog(text, generatedAt) {
 async function loadFromServer() {
   App.pairs = await getJSON(RESULTS + "latest.json");
 
+  // Optional companion file: the model's review of the top pairs. Absent when
+  // no judge has run, in which case the board is unchanged.
+  try {
+    attachVerdicts(await getJSON(RESULTS + "judged.json"));
+  } catch (_) { /* the judge is opt-in; a missing file is normal */ }
+
   let stamp = null;
   try {
     // The file reads "last run (UTC): 2026-08-12T00:10:06Z" — pull the
@@ -203,6 +257,7 @@ function loadFromFiles(files) {
 
   return Promise.all(jobs).then((loaded) => {
     let log = null;
+    let judged = null;
     for (const item of loaded) {
       if (!item) continue;
       if (item.name.endsWith(".log") || item.name.endsWith(".txt")) { log = item.text; continue; }
@@ -212,11 +267,15 @@ function loadFromFiles(files) {
       if (item.name.includes("meta")) App.meta = data;
       else if (item.name.includes("index")) App.history = data;
       else if (item.name.includes("label")) App.labels = data;
+      // judged.json is also an array of pairs, so it must be caught by name
+      // before the generic "looks like the scan" branch claims it.
+      else if (item.name.includes("judged")) judged = data;
       else if (Array.isArray(data) && data.length && data[0].kalshi) App.pairs = data;
     }
     if (!App.meta && log) App.meta = metaFromLog(log, null);
     if (!App.meta) App.meta = metaFromLog("", null);
     if (!App.pairs.length) throw new Error("no scan file among those — expected latest.json");
+    if (judged) attachVerdicts(judged);
   });
 }
 
@@ -257,6 +316,8 @@ function visibleRows() {
   if (App.filters.has("soon")) {
     rows = rows.filter((r) => r.pair.days_to_settle !== null && r.pair.days_to_settle < 30);
   }
+  if (App.filters.has("confirmed")) rows = rows.filter((r) => verdictInfo(r.pair).tier <= 1);
+  if (App.filters.has("rejected")) rows = rows.filter((r) => verdictInfo(r.pair).tier === 3);
 
   const key = {
     annualised: (p) => p.annualised ?? -9e9,
@@ -264,7 +325,17 @@ function visibleRows() {
     gap: (p) => Math.abs(p.mid_gap),
     confidence: (p) => p.confidence,
   }[App.sort];
-  rows.sort((a, b) => key(b.pair) - key(a.pair));
+  // The model's verdict is the primary key when it exists: confirmations first,
+  // rejections last, the chosen metric ordering within each tier. Without any
+  // verdicts every row is tier 2, so this collapses to the metric sort alone.
+  const byVerdict = anyVerdicts();
+  rows.sort((a, b) => {
+    if (byVerdict) {
+      const d = verdictInfo(a.pair).tier - verdictInfo(b.pair).tier;
+      if (d) return d;
+    }
+    return key(b.pair) - key(a.pair);
+  });
   return rows;
 }
 App.visibleRows = visibleRows;
@@ -300,9 +371,7 @@ function renderKpis() {
   const profit = kept.reduce((sum, p) => sum + p.edge * (p.contracts || 0), 0);
   const size = (App.meta && App.meta.thresholds && App.meta.thresholds.size) || 100;
 
-  const strip = $("kpis");
-  strip.hidden = false;
-  strip.replaceChildren(
+  const tiles = [
     kpiTile("Opportunities", String(kept.length),
             `of ${App.pairs.length} in the scan`),
     kpiTile("Best edge", edges.length ? pp(Math.max(...edges)) : "—",
@@ -315,7 +384,24 @@ function renderKpis() {
             `all legs filled, ${size} contracts each`),
     kpiTile("Nearest settle", settles.length ? days(Math.min(...settles)) : "—",
             "soonest resolution in view"),
-  );
+  ];
+
+  // When the model has reviewed this scan, lead with its call on the kept set —
+  // the number that matters more than the edge.
+  if (anyVerdicts()) {
+    const reviewed = kept.filter((p) => p.llm_verdict && !p.llm_verdict.error);
+    const confirmed = reviewed.filter(
+      (p) => p.llm_verdict.verdict === "equivalent"
+          || p.llm_verdict.verdict === "likely_equivalent").length;
+    const rejected = reviewed.filter((p) => p.llm_verdict.verdict === "different").length;
+    tiles.push(kpiTile("Model verdict", `${confirmed} confirmed`,
+      `${rejected} rejected · ${reviewed.length} of the kept set reviewed`,
+      confirmed ? "pos" : ""));
+  }
+
+  const strip = $("kpis");
+  strip.hidden = false;
+  strip.replaceChildren(...tiles);
   $("tab-count-board").textContent = String(kept.length);
 }
 App.renderKpis = renderKpis;
@@ -409,6 +495,24 @@ function flagsCell(pair) {
   return wrap;
 }
 
+/** The model's call, as a badge; its tooltip carries the divergence it found. */
+function verdictCell(pair) {
+  const info = verdictInfo(pair);
+  const wrap = el("div", "vcell");
+  const badge = el("span", "vbadge " + info.cls, info.label || "·");
+  if (info.state === "unreviewed") {
+    badge.title = "Not reviewed by the model.";
+  } else if (info.state === "error") {
+    badge.title = "The model could not judge this pair: " + (info.detail || "unknown");
+  } else {
+    let t = `${info.label} — ${pct(info.confidence)} confidence`;
+    if (info.divergence && !/^none/i.test(info.divergence.trim())) t += "\n" + info.divergence;
+    badge.title = t;
+  }
+  wrap.append(badge);
+  return wrap;
+}
+
 function renderBoard() {
   const rows = visibleRows();
   const body = $("board-body");
@@ -418,13 +522,20 @@ function renderBoard() {
   const maxEdge = Math.max(...rows.map((r) => r.pair.edge), 0.0001);
   const maxGap = Math.max(...rows.map((r) => Math.abs(r.pair.mid_gap)), 0.0001);
 
-  rows.forEach(({ pair, kept, reason }, index) => {
+  rows.forEach(({ pair, kept, reason }) => {
     const tr = el("tr");
     if (!kept) {
-      tr.className = "is-cut";
+      tr.classList.add("is-cut");
       tr.title = "Dropped by the current thresholds: " + reason;
     }
+    // The verdict and the threshold gate are independent signals: a pair can
+    // clear the gate and still be a mismatch the model caught — exactly the
+    // trap this is meant to surface — so both styles can apply to one row.
+    const tier = verdictInfo(pair).tier;
+    if (tier === 3) tr.classList.add("is-llm-mismatch");
+    else if (tier <= 1) tr.classList.add("is-llm-match");
     const cells = [
+      ["llm-col", verdictCell(pair)],
       ["num", edgeCell(pair, maxEdge)],
       ["num", el("span", (pair.annualised ?? 0) > 0 ? "pos" : "", pct(pair.annualised))],
       ["num", gapCell(pair, maxGap)],
@@ -451,18 +562,21 @@ function exportCsv() {
   const columns = ["confidence", "mid_gap", "edge", "annualised", "days_to_settle", "edge_leg",
                    "cost_per_contract", "priced_at_top_of_book", "kalshi_mid", "poly_mid",
                    "kalshi_question", "poly_question", "kalshi_id", "poly_url",
-                   "title_similarity", "rules_similarity", "days_apart", "warnings"];
+                   "title_similarity", "rules_similarity", "days_apart", "warnings",
+                   "llm_verdict", "llm_confidence", "llm_divergence"];
   const cell = (v) => {
     const s = v === null || v === undefined ? "" : String(v);
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   const lines = [columns.join(",")];
   for (const { pair: p } of visibleRows()) {
+    const v = p.llm_verdict || {};
     lines.push([p.confidence, p.mid_gap, p.edge, p.annualised, p.days_to_settle, p.edge_leg,
                 p.cost_per_contract, p.priced_at_top_of_book, p.kalshi.mid, p.polymarket.mid,
                 p.kalshi.question, p.polymarket.question, p.kalshi.id, p.polymarket.url,
                 p.title_similarity, p.rules_similarity, p.days_apart,
-                p.warnings.join("; ")].map(cell).join(","));
+                p.warnings.join("; "),
+                v.verdict || "", v.confidence, v.divergence || ""].map(cell).join(","));
   }
   download("divergence-view.csv", "﻿" + lines.join("\n"), "text/csv");
 }

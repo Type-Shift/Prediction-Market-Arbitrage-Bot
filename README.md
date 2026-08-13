@@ -249,6 +249,42 @@ replaces the *market list* only; the depth pass still fetches order books, so ad
 
 Both APIs are public and read-only; scanning needs no account or keys.
 
+## LLM review of the top pairs (`judge.py`)
+
+The scanner matches *words*; it can't tell that "redistrict" and "use a new
+congressional map" mean the same event, or that Rubio as "leader" vs "head of
+state" might resolve *differently*. `judge.py` sends the most promising pairs
+from a scan to Claude and asks, adversarially, whether a YES on one venue
+really pays out under exactly the same circumstances as a YES on the other —
+returning a verdict, a confidence, and the specific divergence it found.
+
+```
+python judge.py run --source results/latest.json -c 10   # review the top 10 pairs
+python judge.py score                                     # score the model vs labels.json
+python test_judge.py                                      # 13 tests, no network, no key, no spend
+```
+
+It writes `results/judged.json` — each pair with an `llm_verdict` block — plus
+a readable summary. Default model is `claude-opus-5`; pass `--model
+claude-sonnet-5` for a cheaper pass, and use `score` to race the two on your
+own labels before trusting either.
+
+### The API key — never commit it
+
+`judge.py` reads the key from the **`ANTHROPIC_API_KEY` environment variable**
+only. It is never hardcoded and must never be committed — a key in a public
+repo is scraped and drained within minutes.
+
+- **Locally:** `$env:ANTHROPIC_API_KEY = "sk-ant-..."` (PowerShell) before running.
+- **In GitHub Actions:** add it as a repo secret — Settings → Secrets and
+  variables → Actions → New repository secret, named `ANTHROPIC_API_KEY`. The
+  scan workflow then reviews the top 10 pairs automatically after each scan.
+  The value never appears in the repo or the logs.
+
+With no key set, `judge.py` prints a notice and exits cleanly — the scanner is
+unaffected. This is a paid API: reviewing ~10 pairs on the default model runs a
+few tens of cents per scan.
+
 ## Run on GitHub Actions
 
 `.github/workflows/scan.yml` runs the scanner on GitHub's own servers and commits

@@ -55,6 +55,17 @@ jobs:
       - name: Show the report in the run log
         run: cat results/latest.txt || echo "(no report — see results/run.log)"
 
+      - name: Review the top pairs with the LLM judge
+        # No-op unless an ANTHROPIC_API_KEY repo secret is configured — the key
+        # is passed via env and never written to disk. Add it under
+        # Settings → Secrets and variables → Actions → New repository secret.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python judge.py run --source results/latest.json --count 10 \
+            --out results/judged.json > results/judged.txt 2>> results/run.log || true
+          cat results/judged.txt || true
+
       - name: Commit results
         run: |
           git config user.name  "github-actions[bot]"

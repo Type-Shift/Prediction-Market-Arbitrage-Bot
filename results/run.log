@@ -1,26 +1,30 @@
 fetching kalshi...
-kalshi: scanned 30000 open markets, 29888 carry a resting quote
+kalshi: scanned 30000 open markets, 29996 carry a resting quote
 fetching polymarket...
-kalshi       4000 fetched ->  3909 usable
+kalshi       4000 fetched ->  3907 usable
 polymarket   4000 fetched ->  3965 usable
 dropped:
-        91  kalshi: settles beyond 400d horizon
-        91  kalshi: DROPPED (any reason)
+        93  kalshi: settles beyond 400d horizon
+        93  kalshi: DROPPED (any reason)
         35  poly: binary but not yes/no labelled
-flagged 3399 kalshi markets as one-of-N ladder members
-scoring 148,676 candidate pairs...
-  25,000/148,676 (17%) ~8s left
-  50,000/148,676 (34%) ~6s left
-  75,000/148,676 (50%) ~5s left
-  100,000/148,676 (67%) ~3s left
-  125,000/148,676 (84%) ~2s left
-scored 148,676 pairs in 9.9s (0 skipped by prefilter, 98,328 by ladder rule), 138 above confidence 0.45
+flagged 3403 kalshi markets as one-of-N ladder members
+scoring 148,383 candidate pairs...
+  25,000/148,383 (17%) ~8s left
+  50,000/148,383 (34%) ~6s left
+  75,000/148,383 (51%) ~5s left
+  100,000/148,383 (67%) ~3s left
+  125,000/148,383 (84%) ~2s left
+scored 148,383 pairs in 10.2s (0 skipped by prefilter, 98,380 by ladder rule), 138 above confidence 0.45
 fetching order books for top 15 pairs...
 hid 10 pair(s) with implausibly large edges (>10pp); --show-implausible to see them
 wrote results/latest.json
 wrote results/latest.csv
 wrote results/meta.json
-wrote results/history/2026-08-13T08-09-59Z.json
+wrote results/history/2026-08-14T08-06-52Z.json
 created /home/runner/work/Prediction-Market-Arbitrage-Bot/Prediction-Market-Arbitrage-Bot/labels.json with 24 seed labels
 
 25 pair(s) saved. To label them, set CONFIG["command"] = "review" and press Run. (24 already labelled)
+reviewing the top 10 pair(s) with claude-opus-5...
+
+4/10 judged equivalent or likely; wrote results/judged.json
+tokens: 9,457 in / 11,906 out

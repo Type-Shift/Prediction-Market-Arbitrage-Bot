@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-13T08:09:59Z",
+  "generated_at": "2026-08-14T08:06:52Z",
   "scanner_version": "2.0",
   "thresholds": {
     "min_confidence": 0.45,
@@ -39,25 +39,25 @@
   },
   "funnel": {
     "kalshi_scanned": 30000,
-    "kalshi_quoted": 29888,
+    "kalshi_quoted": 29996,
     "kalshi_fetched": 4000,
     "poly_fetched": 4000,
-    "kalshi_usable": 3909,
+    "kalshi_usable": 3907,
     "poly_usable": 3965,
-    "ladder_members": 3399,
-    "candidate_pairs": 148676,
-    "scored": 148676,
+    "ladder_members": 3403,
+    "candidate_pairs": 148383,
+    "scored": 148383,
     "skipped_prefilter": 0,
-    "skipped_ladder": 98328,
+    "skipped_ladder": 98380,
     "above_confidence": 138,
-    "scoring_seconds": 9.9,
+    "scoring_seconds": 10.2,
     "depth_priced": 15,
     "hidden_implausible": 10,
     "kept": 25
   },
   "dropped": {
-    "kalshi: settles beyond 400d horizon": 91,
-    "kalshi: DROPPED (any reason)": 91,
+    "kalshi: settles beyond 400d horizon": 93,
+    "kalshi: DROPPED (any reason)": 93,
     "poly: binary but not yes/no labelled": 35
   },
   "kept": 25,

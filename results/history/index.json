@@ -16,5 +16,14 @@
     "best_annualised": 0.07205215526323938,
     "median_confidence": 0.5717,
     "profit_at_size": 20.91
+  },
+  {
+    "file": "2026-08-14T08-06-52Z.json",
+    "generated_at": "2026-08-14T08:06:52Z",
+    "kept": 25,
+    "best_edge": 0.0165,
+    "best_annualised": 0.06328086070009697,
+    "median_confidence": 0.5603,
+    "profit_at_size": 22.32
   }
 ]

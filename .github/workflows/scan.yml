@@ -2,13 +2,12 @@ name: scan
 
 # Runs the scanner on GitHub's servers, which are not behind a school or
 # workplace content filter, and commits the results back to the repo so they
-# are readable in the browser. Trigger it by hand from the Actions tab
-# (Run workflow), or let the schedule below run it.
+# are readable in the browser. It runs only when you start it by hand from the
+# Actions tab (Run workflow) — there is no schedule, so nothing runs on its own.
 
 on:
-  workflow_dispatch:        # the "Run workflow" button in the Actions tab
-  schedule:
-    - cron: "0 7 * * *"     # 07:00 UTC daily; edit or delete this line freely
+  workflow_dispatch:        # the "Run workflow" button in the Actions tab — the
+                            # only trigger; scans never start unless you click it
 
 permissions:
   contents: write           # lets the job commit results back to the repo

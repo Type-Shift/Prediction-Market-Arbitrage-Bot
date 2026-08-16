@@ -177,6 +177,42 @@ class TestRun(unittest.TestCase):
         self.assertEqual(seen["n"], 5)                         # only the top 5 judged
 
 
+class TestReviewCore(unittest.TestCase):
+    """review_pairs is the shared core the CLI and the server both call."""
+
+    def _run(self, pairs, count=0):
+        seen = []
+        original = judge.call_api
+        judge.call_api = lambda payload, api_key, **kw: fake_api_response(GOOD_VERDICT)
+        try:
+            judged = judge.review_pairs(pairs, "sk-test", count=count,
+                                        progress=lambda i, n, p: seen.append((i, n)))
+        finally:
+            judge.call_api = original
+        return judged, seen
+
+    def test_count_zero_reviews_all(self):
+        judged, seen = self._run([a_pair(f"P{i}", f"P{i}") for i in range(6)], count=0)
+        self.assertEqual(len(judged), 6)
+        self.assertEqual(seen[-1], (6, 6))
+        self.assertEqual(judged[0]["llm_verdict"]["verdict"], "different")
+
+    def test_count_caps_the_shortlist(self):
+        judged, seen = self._run([a_pair(f"P{i}", f"P{i}") for i in range(6)], count=2)
+        self.assertEqual(len(judged), 2)
+        self.assertEqual(seen, [(1, 2), (2, 2)])
+
+    def test_write_judged_drops_internal_tokens(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "judged.json")
+            judge.write_judged(path, [dict(a_pair("A", "A"),
+                llm_verdict={"verdict": "equivalent", "_tokens": {"input": 1}})])
+            with open(path, encoding="utf-8") as fh:
+                out = json.load(fh)
+        self.assertNotIn("_tokens", out[0]["llm_verdict"])
+        self.assertEqual(out[0]["llm_verdict"]["verdict"], "equivalent")
+
+
 class TestKeyHandling(unittest.TestCase):
     def test_missing_key_skips_cleanly(self):
         saved = os.environ.pop("ANTHROPIC_API_KEY", None)

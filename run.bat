@@ -43,6 +43,17 @@ echo.
 echo   Keep this window open. Ctrl-C stops the server.
 echo.
 
+rem ---------------------------------------------------------------------------
+rem  Model review (optional). With an Anthropic API key, clicking Run scan has
+rem  Opus review each scan's results. Supply the key in the ANTHROPIC_API_KEY
+rem  environment variable, or drop it in a file named anthropic_key.txt beside
+rem  this script -- that file is gitignored, so it is never committed.
+rem ---------------------------------------------------------------------------
+if not defined ANTHROPIC_API_KEY if exist "anthropic_key.txt" set /p ANTHROPIC_API_KEY=<anthropic_key.txt
+if defined ANTHROPIC_API_KEY echo   Model review is ON - Opus reviews each scan.
+if not defined ANTHROPIC_API_KEY echo   Model review is off - set ANTHROPIC_API_KEY or add anthropic_key.txt to enable it.
+echo.
+
 rem --open waits until the port is actually bound before launching the browser,
 rem so the tab never lands on a page that is not being served yet.
 %PY% app.py --open %*

@@ -256,6 +256,41 @@ def load_pairs(path: str) -> list[dict]:
     return data
 
 
+def review_pairs(pairs: list[dict], api_key: str, model: str = DEFAULT_MODEL,
+                 max_tokens: int = DEFAULT_MAX_TOKENS, count: int = 0,
+                 progress=None) -> list[dict]:
+    """Judge the top `count` pairs (count <= 0 means all); return them with an
+    `llm_verdict` on each.
+
+    `progress(i, n, pair)` fires after every pair, so a caller — the CLI, or the
+    server streaming to a browser — reports one line per review without knowing
+    how the judging works. The reusable core: both `run` and app.py go through
+    here.
+    """
+    shortlist = pairs if count <= 0 else pairs[:count]
+    n = len(shortlist)
+    judged: list[dict] = []
+    for i, pair in enumerate(shortlist, 1):
+        verdict = judge_pair(pair, api_key, model, max_tokens)
+        merged = dict(pair, llm_verdict=verdict)
+        judged.append(merged)
+        if progress:
+            progress(i, n, merged)
+    return judged
+
+
+def write_judged(path: str, judged: list[dict]) -> None:
+    """Persist judged pairs, dropping the internal `_tokens` accounting."""
+    clean = []
+    for pair in judged:
+        v = pair.get("llm_verdict")
+        if isinstance(v, dict) and "_tokens" in v:
+            pair = dict(pair, llm_verdict={k: val for k, val in v.items() if k != "_tokens"})
+        clean.append(pair)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(clean, fh, indent=2)
+
+
 def cmd_run(args, api_key: str) -> int:
     try:
         pairs = load_pairs(args.source)
@@ -263,31 +298,31 @@ def cmd_run(args, api_key: str) -> int:
         print(f"error: cannot read {args.source!r}: {exc}", file=sys.stderr)
         return 2
 
-    shortlist = pairs[: args.count]
-    if not shortlist:
+    if not pairs:
         print("no pairs to review.", file=sys.stderr)
         return 0
 
-    print(f"reviewing the top {len(shortlist)} pair(s) with {args.model}...",
-          file=sys.stderr)
-    judged, matches, in_tok, out_tok = [], 0, 0, 0
-    for i, pair in enumerate(shortlist, 1):
-        verdict = judge_pair(pair, api_key, args.model, args.max_tokens)
-        pair = dict(pair, llm_verdict=verdict)
-        judged.append(pair)
-        tokens = verdict.pop("_tokens", {}) if "error" not in verdict else {}
-        in_tok += tokens.get("input") or 0
-        out_tok += tokens.get("output") or 0
-        if verdict.get("verdict") in ("equivalent", "likely_equivalent"):
-            matches += 1
+    n = len(pairs) if args.count <= 0 else min(args.count, len(pairs))
+    scope = "all" if args.count <= 0 else "the top"
+    print(f"reviewing {scope} {n} pair(s) with {args.model}...", file=sys.stderr)
+
+    totals = {"in": 0, "out": 0}
+
+    def progress(i, total, pair):
+        verdict = pair["llm_verdict"]
+        tok = verdict.get("_tokens") or {}
+        totals["in"] += tok.get("input") or 0
+        totals["out"] += tok.get("output") or 0
         print(render_verdict(i, pair, verdict))
 
-    with open(args.out, "w", encoding="utf-8") as fh:
-        json.dump(judged, fh, indent=2)
-    print(f"\n{matches}/{len(shortlist)} judged equivalent or likely; wrote {args.out}",
+    judged = review_pairs(pairs, api_key, args.model, args.max_tokens, args.count, progress)
+    write_judged(args.out, judged)
+    matches = sum(1 for p in judged
+                  if p["llm_verdict"].get("verdict") in ("equivalent", "likely_equivalent"))
+    print(f"\n{matches}/{len(judged)} judged equivalent or likely; wrote {args.out}",
           file=sys.stderr)
-    if in_tok or out_tok:
-        print(f"tokens: {in_tok:,} in / {out_tok:,} out", file=sys.stderr)
+    if totals["in"] or totals["out"]:
+        print(f"tokens: {totals['in']:,} in / {totals['out']:,} out", file=sys.stderr)
     return 0
 
 
@@ -353,7 +388,7 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", parents=[common], help="review the top pairs from a scan")
     r.add_argument("--source", default=os.path.join(HERE, "results", "latest.json"))
     r.add_argument("-c", "--count", type=int, default=DEFAULT_COUNT,
-                   help="how many of the most promising pairs to review")
+                   help="how many of the most promising pairs to review (0 = all)")
     r.add_argument("--out", default=os.path.join(HERE, "results", "judged.json"))
 
     s = sub.add_parser("score", parents=[common], help="score the model against labels.json")

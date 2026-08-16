@@ -19,6 +19,7 @@ import urllib.request
 import allocator as a
 import app
 import bot as b
+import judge
 import scanner as s
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,6 +36,11 @@ class ServerCase(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.dir, True)
+
+        # No accidental spend: a scan only reviews with the model when a key is
+        # present, so every test that is not about that runs without one.
+        self._saved_key = os.environ.pop("ANTHROPIC_API_KEY", None)
+        self.addCleanup(self._restore_key)
 
         self._saved = (app.RESULTS_DIR, a.PAPER_PATH, b.BOT_PATH,
                        s.LAST_RUN_PATH, s.LABELS_PATH)
@@ -66,6 +72,12 @@ class ServerCase(unittest.TestCase):
     def _restore(self):
         (app.RESULTS_DIR, a.PAPER_PATH, b.BOT_PATH,
          s.LAST_RUN_PATH, s.LABELS_PATH) = self._saved
+
+    def _restore_key(self):
+        if self._saved_key is not None:
+            os.environ["ANTHROPIC_API_KEY"] = self._saved_key
+        else:
+            os.environ.pop("ANTHROPIC_API_KEY", None)
 
     # -- helpers -----------------------------------------------------------
 
@@ -330,6 +342,48 @@ class TestVerdictInState(ServerCase):
                   if p["kalshi"]["id"] != target["kalshi"]["id"]]
         if others:
             self.assertIsNone(others[0]["llm_verdict"])
+
+
+class TestJudgeOnScan(ServerCase):
+    """A key in the environment makes a scan review its own results.
+
+    judge.call_api is stubbed, so this exercises the whole scan → review →
+    /api/state path without any network call or spend.
+    """
+
+    def setUp(self):
+        super().setUp()  # clears any real key first
+        os.environ["ANTHROPIC_API_KEY"] = "sk-test-not-real"
+        self.addCleanup(os.environ.pop, "ANTHROPIC_API_KEY", None)
+        self._orig_call = judge.call_api
+        judge.call_api = self._fake_call
+        self.addCleanup(lambda: setattr(judge, "call_api", self._orig_call))
+
+    @staticmethod
+    def _fake_call(payload, api_key, **kw):
+        return {
+            "content": [{"type": "text", "text": json.dumps({
+                "verdict": "likely_equivalent", "confidence": 0.7,
+                "resolution_source": "same", "timing": "same",
+                "threshold_and_polarity": "same", "divergence": "none found",
+                "reasoning": "stub"})}],
+            "stop_reason": "end_turn", "model": "claude-opus-5",
+            "usage": {"input_tokens": 10, "output_tokens": 5},
+        }
+
+    def test_state_reports_the_judge_is_enabled(self):
+        _, state = self.get("/api/state")
+        self.assertTrue(state["judge"]["enabled"])
+        self.assertTrue(state["judge"]["model"])
+
+    def test_a_scan_reviews_its_pairs_and_writes_judged(self):
+        self.scan_and_wait()
+        self.assertTrue(os.path.exists(os.path.join(app.RESULTS_DIR, "judged.json")))
+        _, state = self.get("/api/state")
+        self.assertTrue(state["pairs"])
+        self.assertTrue(all(p.get("llm_verdict") for p in state["pairs"]),
+                        "every pair should carry a verdict when the judge ran")
+        self.assertEqual(state["pairs"][0]["llm_verdict"]["verdict"], "likely_equivalent")
 
 
 if __name__ == "__main__":

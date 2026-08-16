@@ -43,6 +43,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import allocator
 import bot
+import judge
 import scanner
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -169,6 +170,13 @@ class Runner:
         self.state = bot.load_state()
         self.records: list[dict] = load_committed_pairs()
         self.meta: dict | None = load_committed_meta()
+        # Model review runs after each scan when ANTHROPIC_API_KEY is set.
+        # ARB_JUDGE_COUNT 0 (the default) reviews every pair the scan kept.
+        self.judge_model = os.environ.get("ARB_JUDGE_MODEL", judge.DEFAULT_MODEL)
+        try:
+            self.judge_count = int(os.environ.get("ARB_JUDGE_COUNT", "0"))
+        except ValueError:
+            self.judge_count = 0
 
     # -- state the browser reads ------------------------------------------
 
@@ -221,6 +229,7 @@ class Runner:
 
             self.records = records
             self.meta = meta
+            self._run_judge(records)
             cycle = self._run_bot(records)
             BUS.publish("run-done", {"meta": meta, "kept": len(records),
                                      "cycle": cycle})
@@ -246,6 +255,49 @@ class Runner:
             with self.lock:
                 self.running = False
                 self.started_at = None
+
+    def _run_judge(self, records: list[dict]) -> None:
+        """Review the scan with the model, if an API key is in the environment.
+
+        Runs on the scan thread, right after the results are written and before
+        run-done fires, so verdicts are on disk by the time the browser reloads.
+        A missing key, or an API failure, is non-fatal: the scan results stand
+        and the board simply shows the pairs as unreviewed.
+        """
+        key = judge.get_api_key()
+        if not key or not records:
+            return
+        model = self.judge_model
+        BUS.publish("judge-start", {"count": len(records), "model": model})
+        self._publish_line(f"reviewing {len(records)} pair(s) with {model}...")
+
+        def progress(i: int, n: int, pair: dict) -> None:
+            verdict = pair["llm_verdict"]
+            label = verdict.get("error") and "error" or verdict.get("verdict", "?")
+            self._publish_line(f"  model review {i}/{n}: {label}")
+
+        try:
+            judged = judge.review_pairs(records, key, model=model,
+                                        count=self.judge_count, progress=progress)
+            judge.write_judged(os.path.join(RESULTS_DIR, "judged.json"), judged)
+        except Exception as exc:  # noqa: BLE001 - review must not sink a good scan
+            traceback.print_exc(file=sys.__stderr__)
+            BUS.publish("judge-failed", {"error": f"{type(exc).__name__}: {exc}"})
+            self._publish_line(f"model review failed: {exc}")
+            return
+
+        errors = [p["llm_verdict"]["error"] for p in judged if "error" in p["llm_verdict"]]
+        if errors and len(errors) == len(judged):
+            # Every pair errored — almost always a bad or unset key, or the API
+            # unreachable. Say so once rather than showing a board of blanks.
+            BUS.publish("judge-failed", {"error": errors[0]})
+            self._publish_line(f"model review failed: {errors[0]}")
+            return
+
+        confirmed = sum(1 for p in judged
+                        if p["llm_verdict"].get("verdict") in ("equivalent", "likely_equivalent"))
+        BUS.publish("judged", {"reviewed": len(judged), "confirmed": confirmed})
+        self._publish_line(f"model review done: {confirmed}/{len(judged)} confirmed")
 
     def _run_bot(self, records: list[dict]) -> dict | None:
         if not self.state["running"]:
@@ -533,6 +585,7 @@ class Handler(SimpleHTTPRequestHandler):
             "history": load_history(),
             "labels": scanner.load_labels(),
             "bot": runner.bot_snapshot(),
+            "judge": {"enabled": bool(judge.get_api_key()), "model": runner.judge_model},
         }
 
     def stream_events(self) -> None:

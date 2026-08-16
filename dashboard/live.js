@@ -63,10 +63,22 @@
     App.history = state.history || [];
     App.bot = state.bot || null;
     App.run = state.run || null;
+    App.judge = state.judge || null;
     // Labels come from labels.json on disk now, not localStorage — the file
     // score and sweep already read. The Labels view writes back through
     // /api/labels, so the export-and-copy-the-file step is gone.
     if (Array.isArray(state.labels)) App.labels = state.labels;
+    reflectJudge();
+  }
+
+  /** Show whether a scan will be reviewed by the model — i.e. whether the
+      server found an ANTHROPIC_API_KEY in its environment. */
+  function reflectJudge() {
+    const flag = $("judge-flag");
+    if (!flag) return;
+    const on = App.judge && App.judge.enabled;
+    flag.hidden = !on;
+    if (on) flag.textContent = "+ model review (" + (App.judge.model || "on") + ")";
   }
 
   App.adoptState = adopt;
@@ -211,6 +223,15 @@
       // The metadata was still published, so the funnel and the freshness
       // stamp should update to say the run failed.
       await refreshAll();
+    });
+
+    // The model finished reviewing the scan; reload so the verdicts land on the
+    // board (they were written to judged.json just before this fired).
+    source.addEventListener("judged", refreshAll);
+    source.addEventListener("judge-failed", (e) => {
+      const data = parse(e);
+      banner("Model review failed: " + ((data && data.error) || "unknown error")
+             + " — the scan results are unaffected.");
     });
 
     source.addEventListener("bot", refreshAll);

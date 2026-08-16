@@ -543,6 +543,14 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
 
 /* ── the model's verdict (judge.py → results/judged.json) ────────────── */
 
+.judge-flag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--pos);
+  white-space: nowrap;
+  align-self: center;
+}
+
 th.llm-col, td.llm-col { width: 78px; }
 .vcell { display: flex; }
 .vbadge {

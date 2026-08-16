@@ -376,13 +376,22 @@ class TestJudgeOnScan(ServerCase):
         self.assertTrue(state["judge"]["enabled"])
         self.assertTrue(state["judge"]["model"])
 
+    def wait_for_verdicts(self, timeout=30):
+        """The review runs on its own thread after the scan is marked idle, so
+        poll /api/state until the verdicts land rather than reading once."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            _, state = self.get("/api/state")
+            if state["pairs"] and all(p.get("llm_verdict") for p in state["pairs"]):
+                return state
+            time.sleep(0.1)
+        self.fail("verdicts did not reach /api/state in time")
+
     def test_a_scan_reviews_its_pairs_and_writes_judged(self):
         self.scan_and_wait()
+        state = self.wait_for_verdicts()
         self.assertTrue(os.path.exists(os.path.join(app.RESULTS_DIR, "judged.json")))
-        _, state = self.get("/api/state")
         self.assertTrue(state["pairs"])
-        self.assertTrue(all(p.get("llm_verdict") for p in state["pairs"]),
-                        "every pair should carry a verdict when the judge ran")
         self.assertEqual(state["pairs"][0]["llm_verdict"]["verdict"], "likely_equivalent")
 
 

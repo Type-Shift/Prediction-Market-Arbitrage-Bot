@@ -164,6 +164,7 @@ class Runner:
         self.base_flags = base_flags
         self.lock = threading.Lock()
         self.running = False
+        self.scan_gen = 0
         self.started_at: float | None = None
         self.last_error: str | None = None
         self.log: list[str] = []
@@ -200,6 +201,7 @@ class Runner:
             if self.running:
                 return False, "a scan is already running"
             self.running = True
+            self.scan_gen += 1
             self.started_at = time.time()
             self.last_error = None
             self.log = []
@@ -212,6 +214,7 @@ class Runner:
         BUS.publish("progress", {"line": line})
 
     def _run(self, flags: list[str]) -> None:
+        gen = self.scan_gen
         BUS.publish("run-start", {"at": iso_now()})
         tee = StderrTee(sys.__stderr__, self._publish_line)
         try:
@@ -229,10 +232,14 @@ class Runner:
 
             self.records = records
             self.meta = meta
-            self._run_judge(records)
             cycle = self._run_bot(records)
             BUS.publish("run-done", {"meta": meta, "kept": len(records),
                                      "cycle": cycle})
+            # The model review can make one slow API call per pair, so it runs
+            # on its own thread now that the scan is done: the board shows the
+            # results and the button frees up at once, and verdicts arrive later
+            # through the "judged" event instead of holding the run open.
+            self._start_review(records, gen)
 
         except scanner.FetchError as exc:
             # The scanner's own failure mode: a venue is unreachable, or a
@@ -256,13 +263,25 @@ class Runner:
                 self.running = False
                 self.started_at = None
 
-    def _run_judge(self, records: list[dict]) -> None:
-        """Review the scan with the model, if an API key is in the environment.
+    def _start_review(self, records: list[dict], gen: int) -> None:
+        """Hand the finished scan to the model on a background thread.
 
-        Runs on the scan thread, right after the results are written and before
-        run-done fires, so verdicts are on disk by the time the browser reloads.
+        Only when a key is set and the scan kept something. The scan is already
+        marked done by the time this runs, so a slow review never holds the run
+        open; `gen` lets the review notice if a newer scan has superseded it.
+        """
+        if not judge.get_api_key() or not records:
+            return
+        threading.Thread(target=self._run_judge, args=(records, gen),
+                         daemon=True).start()
+
+    def _run_judge(self, records: list[dict], gen: int) -> None:
+        """Review the scan with the model, streaming a line per pair.
+
         A missing key, or an API failure, is non-fatal: the scan results stand
-        and the board simply shows the pairs as unreviewed.
+        and the board shows the pairs as unreviewed. Reviewing every pair can
+        take minutes, so if a newer scan has started meanwhile this stale review
+        is dropped rather than overwriting the newer verdicts.
         """
         key = judge.get_api_key()
         if not key or not records:
@@ -279,19 +298,30 @@ class Runner:
         try:
             judged = judge.review_pairs(records, key, model=model,
                                         count=self.judge_count, progress=progress)
-            judge.write_judged(os.path.join(RESULTS_DIR, "judged.json"), judged)
         except Exception as exc:  # noqa: BLE001 - review must not sink a good scan
             traceback.print_exc(file=sys.__stderr__)
             BUS.publish("judge-failed", {"error": f"{type(exc).__name__}: {exc}"})
             self._publish_line(f"model review failed: {exc}")
             return
 
+        if gen != self.scan_gen:
+            return  # a newer scan has superseded this review; drop it silently
+
         errors = [p["llm_verdict"]["error"] for p in judged if "error" in p["llm_verdict"]]
         if errors and len(errors) == len(judged):
             # Every pair errored — almost always a bad or unset key, or the API
-            # unreachable. Say so once rather than showing a board of blanks.
+            # unreachable. Say so once and leave any prior verdicts in place
+            # rather than overwriting them with a board of blanks.
             BUS.publish("judge-failed", {"error": errors[0]})
             self._publish_line(f"model review failed: {errors[0]}")
+            return
+
+        try:
+            judge.write_judged(os.path.join(RESULTS_DIR, "judged.json"), judged)
+        except OSError as exc:
+            traceback.print_exc(file=sys.__stderr__)
+            BUS.publish("judge-failed", {"error": f"{type(exc).__name__}: {exc}"})
+            self._publish_line(f"model review failed: {exc}")
             return
 
         confirmed = sum(1 for p in judged

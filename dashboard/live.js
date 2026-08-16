@@ -225,11 +225,23 @@
       await refreshAll();
     });
 
+    // The review runs in the background after the scan finishes, so the board
+    // shows results at once. Flag that it is going, then swap back to the
+    // static tag once verdicts land (refreshAll → adopt → reflectJudge).
+    source.addEventListener("judge-start", (e) => {
+      const data = parse(e);
+      const flag = $("judge-flag");
+      if (!flag || !(App.judge && App.judge.enabled)) return;
+      flag.hidden = false;
+      flag.textContent = "reviewing " + ((data && data.count) || "") + " pair(s) with the model…";
+    });
+
     // The model finished reviewing the scan; reload so the verdicts land on the
     // board (they were written to judged.json just before this fired).
     source.addEventListener("judged", refreshAll);
     source.addEventListener("judge-failed", (e) => {
       const data = parse(e);
+      reflectJudge();
       banner("Model review failed: " + ((data && data.error) || "unknown error")
              + " — the scan results are unaffected.");
     });

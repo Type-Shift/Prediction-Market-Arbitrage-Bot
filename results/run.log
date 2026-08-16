@@ -1,30 +1,30 @@
 fetching kalshi...
-kalshi: scanned 30000 open markets, 30000 carry a resting quote
+kalshi: scanned 30000 open markets, 29996 carry a resting quote
 fetching polymarket...
-kalshi       4000 fetched ->  3907 usable
+kalshi       4000 fetched ->  3908 usable
 polymarket   4000 fetched ->  3965 usable
 dropped:
-        93  kalshi: settles beyond 400d horizon
-        93  kalshi: DROPPED (any reason)
+        92  kalshi: settles beyond 400d horizon
+        92  kalshi: DROPPED (any reason)
         35  poly: binary but not yes/no labelled
-flagged 3410 kalshi markets as one-of-N ladder members
-scoring 148,318 candidate pairs...
-  25,000/148,318 (17%) ~7s left
-  50,000/148,318 (34%) ~5s left
-  75,000/148,318 (51%) ~4s left
-  100,000/148,318 (67%) ~3s left
-  125,000/148,318 (84%) ~1s left
-scored 148,318 pairs in 8.8s (0 skipped by prefilter, 98,798 by ladder rule), 140 above confidence 0.45
+flagged 3406 kalshi markets as one-of-N ladder members
+scoring 148,355 candidate pairs...
+  25,000/148,355 (17%) ~6s left
+  50,000/148,355 (34%) ~5s left
+  75,000/148,355 (51%) ~4s left
+  100,000/148,355 (67%) ~2s left
+  125,000/148,355 (84%) ~1s left
+scored 148,355 pairs in 7.7s (0 skipped by prefilter, 98,943 by ladder rule), 140 above confidence 0.45
 fetching order books for top 15 pairs...
 hid 11 pair(s) with implausibly large edges (>10pp); --show-implausible to see them
 wrote results/latest.json
 wrote results/latest.csv
 wrote results/meta.json
-wrote results/history/2026-08-15T07-20-57Z.json
+wrote results/history/2026-08-16T07-21-55Z.json
 created /home/runner/work/Prediction-Market-Arbitrage-Bot/Prediction-Market-Arbitrage-Bot/labels.json with 24 seed labels
 
 25 pair(s) saved. To label them, set CONFIG["command"] = "review" and press Run. (24 already labelled)
 reviewing the top 10 pair(s) with claude-opus-5...
 
-5/10 judged equivalent or likely; wrote results/judged.json
-tokens: 9,996 in / 12,538 out
+1/10 judged equivalent or likely; wrote results/judged.json
+tokens: 9,125 in / 12,465 out

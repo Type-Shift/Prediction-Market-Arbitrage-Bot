@@ -3,110 +3,36 @@
 sized at 100 contracts per leg
 ====================================================================================================
 
-[1] confidence 0.61   mid gap +3.2pp   edge +1.44pp  <-- CANDIDATE, VERIFY RULES
-    +6.5% annualised over 84 days of locked capital
-    kalshi       3.5%  [bid   2.0 / ask   5.0]  vol 27,516
-      What states will redistrict before the 2026 Congressional elections? — Kansas
-      KXREDISTRICTING-26-KS  https://kalshi.com/markets/kxredistricting-26
-    polymarket   0.2%  [bid   0.1 / ask   0.4]  vol 7,979
-      Will Kansas use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-kansas-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.50  rules 0.66  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9856 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[2] confidence 0.63   mid gap -3.7pp   edge +1.38pp  <-- CANDIDATE, VERIFY RULES
-    +6.2% annualised over 84 days of locked capital
-    kalshi       1.6%  [bid   1.1 / ask   2.0]  vol 10,544
-      What states will redistrict before the 2026 Congressional elections? — Nebraska
-      KXREDISTRICTING-26-NEBR  https://kalshi.com/markets/kxredistricting-26
-    polymarket   5.3%  [bid   3.7 / ask   6.8]  vol 7,515
-      Will Nebraska use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-nebraska-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.53  rules 0.65  dates 0.90  (6d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9862 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[3] confidence 0.62   mid gap -2.8pp   edge +1.22pp  <-- CANDIDATE, VERIFY RULES
-    +5.5% annualised over 84 days of locked capital
-    kalshi       1.8%  [bid   1.0 / ask   2.5]  vol 6,346
-      What states will redistrict before the 2026 Congressional elections? — Minnesota
-      KXREDISTRICTING-26-MN  https://kalshi.com/markets/kxredistricting-26
-    polymarket   4.5%  [bid   4.1 / ask   5.0]  vol 15,865
-      Will Minnesota use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-minnesota-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.50  rules 0.67  dates 0.90  (6d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9878 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[4] confidence 0.62   mid gap +3.1pp   edge +1.11pp  <-- CANDIDATE, VERIFY RULES
-    +4.9% annualised over 84 days of locked capital
-    kalshi       5.6%  [bid   4.0 / ask   7.2]  vol 23,602
+[1] confidence 0.62   mid gap +3.0pp   edge +1.00pp  <-- CANDIDATE, VERIFY RULES
+    +4.6% annualised over 83 days of locked capital
+    kalshi       5.5%  [bid   4.0 / ask   7.1]  vol 23,602
       What states will redistrict before the 2026 Congressional elections? — Wisconsin
       KXREDISTRICTING-26-WI  https://kalshi.com/markets/kxredistricting-26
-    polymarket   2.5%  [bid   2.4 / ask   2.5]  vol 22,576
+    polymarket   2.5%  [bid   2.4 / ask   2.6]  vol 22,576
       Will Wisconsin use a new congressional map for the 2026 United States midterm elections?
       https://polymarket.com/market/will-wisconsin-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
     similarity: title 0.51  rules 0.66  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9889 per contract for $1.00 at settlement (both venues' fees included)
+    trade: buy YES polymarket / NO kalshi — pay $0.9900 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
 
-[5] confidence 0.64   mid gap +3.7pp   edge +0.81pp  <-- CANDIDATE, VERIFY RULES
-    +3.6% annualised over 84 days of locked capital
-    kalshi      96.2%  [bid  95.4 / ask  97.0]  vol 129,567
-      What states will redistrict before the 2026 Congressional elections? — Louisiana
-      KXREDISTRICTING-26-LA  https://kalshi.com/markets/kxredistricting-26
-    polymarket  92.5%  [bid  91.0 / ask  94.0]  vol 16,019
-      Will Louisiana use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-louisiana-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.55  rules 0.65  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9919 per contract for $1.00 at settlement (both venues' fees included)
+[2] confidence 0.63   mid gap -3.0pp   edge +0.87pp  <-- CANDIDATE, VERIFY RULES
+    +4.0% annualised over 83 days of locked capital
+    kalshi       2.6%  [bid   1.2 / ask   4.0]  vol 57,612
+      What states will redistrict before the 2026 Congressional elections? — Georgia
+      KXREDISTRICTING-26-GA  https://kalshi.com/markets/kxredistricting-26
+    polymarket   5.6%  [bid   5.4 / ask   5.9]  vol 8,469
+      Will Georgia use a new congressional map for the 2026 United States midterm elections?
+      https://polymarket.com/market/will-georgia-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
+    similarity: title 0.53  rules 0.66  dates 0.90  (6d apart)
+    trade: buy YES kalshi / NO polymarket — pay $0.9913 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
 
-[6] confidence 0.63   mid gap +2.4pp   edge +0.72pp  <-- CANDIDATE, VERIFY RULES
-    +3.2% annualised over 84 days of locked capital
-    kalshi       2.5%  [bid   1.0 / ask   4.0]  vol 163,116
-      What states will redistrict before the 2026 Congressional elections? — South Carolina
-      KXREDISTRICTING-26-SC  https://kalshi.com/markets/kxredistricting-26
-    polymarket   0.1%  [bid   0.1 / ask   0.2]  vol 28,897
-      Will South Carolina use a new congressional map for the 2026 United States midterm elec…
-      https://polymarket.com/market/will-south-carolina-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.53  rules 0.65  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9928 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[7] confidence 0.49   mid gap +2.2pp   edge +1.20pp  <-- CANDIDATE, VERIFY RULES
-    +3.1% annualised over 145 days of locked capital
-    kalshi       6.3%  [bid   6.0 / ask   6.6]  vol 1,001,764
-      Will the United States recognize Reza Pahlavi as the leader of Iran in 2026? — Before 2…
-      KXRECOGPERSONIRAN-26  https://kalshi.com/markets/kxrecogpersoniran-26
-    polymarket   4.1%  [bid   4.0 / ask   4.2]  vol 625,097
-      US recognizes Reza Pahlavi as leader of Iran in 2026?
-      https://polymarket.com/market/us-recognizes-reza-pahlavi-as-leader-of-iran-in2026
-    similarity: title 0.69  rules 0.37  dates 0.75  (9d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9880 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side names a year the other does not
-
-[8] confidence 0.53   mid gap +4.5pp   edge +1.09pp  <-- CANDIDATE, VERIFY RULES
-    +2.9% annualised over 138 days of locked capital
-    kalshi      10.5%  [bid   9.0 / ask  12.0]  vol 57,164
-      What kind of device will Jony Ive and OpenAI announce? — Earbuds/Headphones
-      KXOAIHARDWARE-27-EARBUDS  https://kalshi.com/markets/kxoaihardware-27
-    polymarket   6.0%  [bid   5.0 / ask   7.0]  vol 122,257
-      Will OpenAI announce earbuds or headphones in 2026? — Earbuds/Headphones
-      https://polymarket.com/market/will-openai-announce-earbuds-or-headphones-in-2026
-    similarity: title 0.63  rules 0.46  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9891 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side names a year the other does not
-
-[9] confidence 0.60   mid gap +2.2pp   edge +1.08pp  <-- CANDIDATE, VERIFY RULES
-    +2.8% annualised over 144 days of locked capital
-    kalshi       2.4%  [bid   1.5 / ask   3.3]  vol 67,276
+[3] confidence 0.60   mid gap +2.1pp   edge +1.08pp  <-- CANDIDATE, VERIFY RULES
+    +2.8% annualised over 143 days of locked capital
+    kalshi       2.4%  [bid   1.5 / ask   3.2]  vol 67,276
       Will Vladimir Padrino López be the head of state of Venezuela on Dec 31, 2026?
       KXVENEZUELALEADER-26DEC31-VLOP  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.2%  [bid   0.1 / ask   0.3]  vol 799,027
+    polymarket   0.2%  [bid   0.2 / ask   0.3]  vol 816,452
       Will Vladimir Padrino López be the leader of Venezuela end of 2026?
       https://polymarket.com/market/will-vladimir-padrino-lpez-be-the-leader-of-venezuela-end-of-2026
     similarity: title 0.81  rules 0.45  dates 0.75  (8d apart)
@@ -114,76 +40,63 @@ sized at 100 contracts per leg
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[10] confidence 0.49   mid gap -6.3pp   edge +1.11pp  <-- CANDIDATE, VERIFY RULES
-    +2.5% annualised over 168 days of locked capital
-    kalshi      33.7%  [bid  32.3 / ask  35.1]  vol 28,822
-      State of the economy at the end of 2026? — Overheating
-      KXECONPATH-26-OHEAT  https://kalshi.com/markets/kxeconpath-26
-    polymarket  40.0%  [bid  39.0 / ask  41.0]  vol 23,984
-      Will the US economy be overheating at the end of 2026? — Overheating (Unemployment <5.0…
-      https://polymarket.com/market/will-the-us-economy-be-overheating-at-the-end-of-2026
-    similarity: title 0.67  rules 0.51  dates 0.50  (16d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9889 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[11] confidence 0.55   mid gap +4.3pp   edge +0.95pp  <-- CANDIDATE, VERIFY RULES
-    +2.4% annualised over 145 days of locked capital
-    kalshi      16.5%  [bid  15.0 / ask  18.0]  vol 83,969
-      Will Nashville win the MLS Cup?
-      KXMLSCUP-26-NSH  https://kalshi.com/markets/kxmlscup-26
-    polymarket  12.2%  [bid  11.7 / ask  12.6]  vol 314,889
-      Will Nashville SC win the 2026 MLS Cup?
-      https://polymarket.com/market/will-nashville-sc-win-the-2026-mls-cup
-    similarity: title 0.86  rules 0.41  dates 0.50  (21d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9905 per contract for $1.00 at settlement (both venues' fees included)
+[4] confidence 0.45   mid gap -4.0pp   edge +0.80pp  <-- CANDIDATE, VERIFY RULES
+    +2.1% annualised over 144 days of locked capital
+    kalshi      22.5%  [bid  22.0 / ask  23.0]  vol 284,927
+      Will Miami win the MLS Cup?
+      KXMLSCUP-26-MIA  https://kalshi.com/markets/kxmlscup-26
+    polymarket  26.5%  [bid  26.0 / ask  27.0]  vol 89,706
+      Will Inter Miami CF win the 2026 MLS Cup?
+      https://polymarket.com/market/will-inter-miami-cf-win-the-2026-mls-cup
+    similarity: title 0.65  rules 0.45  dates 0.50  (21d apart)
+    trade: buy YES kalshi / NO polymarket — pay $0.9920 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side names a year the other does not
 
-[12] confidence 0.55   mid gap -3.0pp   edge +0.76pp  <-- CANDIDATE, VERIFY RULES
-    +1.9% annualised over 145 days of locked capital
-    kalshi      83.5%  [bid  83.0 / ask  84.0]  vol 28,216
-      Will any part of the United States federal government take a stake of above 0% in Globa…
-      KXUSACOMPANYSTAKE-27JAN01-GFS  https://kalshi.com/markets/kxusacompanystake-27jan01
-    polymarket  86.5%  [bid  86.3 / ask  86.6]  vol 6,177
-      Will the US federal government take a stake in GlobalFoundries Inc.?
-      https://polymarket.com/market/will-the-us-federal-government-take-a-stake-in-globalfoundries-inc
-    similarity: title 0.75  rules 0.41  dates 0.75  (9d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9924 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[13] confidence 0.53   mid gap +2.3pp   edge +0.68pp  <-- CANDIDATE, VERIFY RULES
-    +1.8% annualised over 138 days of locked capital
-    kalshi       6.0%  [bid   5.0 / ask   7.0]  vol 59,213
+[5] confidence 0.53   mid gap +1.8pp   edge +0.68pp  <-- CANDIDATE, VERIFY RULES
+    +1.8% annualised over 137 days of locked capital
+    kalshi       5.5%  [bid   5.0 / ask   6.0]  vol 59,327
       New pandemic by 2026? — In Dec 31, 2026
       KXNEWOUTBREAKEBOLA-26  https://kalshi.com/markets/kxnewoutbreakebola-26
-    polymarket   3.7%  [bid   3.6 / ask   3.8]  vol 691,779
+    polymarket   3.8%  [bid   3.7 / ask   3.8]  vol 692,078
       Ebola pandemic in 2026?
       https://polymarket.com/market/ebola-pandemic-in-2026
-    similarity: title 0.59  rules 0.48  dates 1.00  (2d apart)
+    similarity: title 0.59  rules 0.49  dates 1.00  (2d apart)
     trade: buy YES polymarket / NO kalshi — pay $0.9932 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[14] confidence 0.70   mid gap +1.8pp   edge +0.67pp  <-- CANDIDATE, VERIFY RULES
-    +1.8% annualised over 139 days of locked capital
-    kalshi       4.8%  [bid   4.1 / ask   5.4]  vol 240,828
+[6] confidence 0.70   mid gap +1.8pp   edge +0.67pp  <-- CANDIDATE, VERIFY RULES
+    +1.8% annualised over 138 days of locked capital
+    kalshi       4.8%  [bid   4.1 / ask   5.4]  vol 241,176
       Will Barack Obama be arrested before Jan 2027?
       KXARREST-27JAN-BOM  https://kalshi.com/markets/kxarrest-27jan
-    polymarket   2.9%  [bid   2.9 / ask   3.0]  vol 20,625
+    polymarket   2.9%  [bid   2.9 / ask   3.0]  vol 20,682
       Obama arrested before 2027?
       https://polymarket.com/market/obama-arrested-before-2027
-    similarity: title 0.75  rules 0.48  dates 0.90  (3d apart)
+    similarity: title 0.76  rules 0.48  dates 0.90  (3d apart)
     trade: buy YES polymarket / NO kalshi — pay $0.9933 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
 
-[15] confidence 0.56   mid gap +1.5pp   edge +0.59pp  <-- CANDIDATE, VERIFY RULES
-    +1.5% annualised over 145 days of locked capital
-    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 15,355
+[7] confidence 0.50   mid gap +3.1pp   edge +0.57pp  <-- CANDIDATE, VERIFY RULES
+    +1.5% annualised over 137 days of locked capital
+    kalshi       6.5%  [bid   5.0 / ask   8.0]  vol 14,758
+      What kind of device will Jony Ive and OpenAI announce? — Phone
+      KXOAIHARDWARE-27-PHONE  https://kalshi.com/markets/kxoaihardware-27
+    polymarket   3.4%  [bid   2.9 / ask   3.9]  vol 56,397
+      Will OpenAI announce a phone in 2026?
+      https://polymarket.com/market/will-openai-announce-a-phone-in-2026
+    similarity: title 0.56  rules 0.51  dates 1.00  (2d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9943 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side names a year the other does not
+
+[8] confidence 0.56   mid gap +1.5pp   edge +0.59pp  <-- CANDIDATE, VERIFY RULES
+    +1.5% annualised over 144 days of locked capital
+    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 15,444
       Will New York City win the MLS Cup?
       KXMLSCUP-26-NYC  https://kalshi.com/markets/kxmlscup-26
-    polymarket   2.1%  [bid   2.0 / ask   2.1]  vol 696,645
+    polymarket   2.1%  [bid   2.0 / ask   2.1]  vol 698,074
       Will New York City FC win the 2026 MLS Cup?
       https://polymarket.com/market/will-new-york-city-fc-win-the-2026-mls-cup
     similarity: title 0.87  rules 0.43  dates 0.50  (21d apart)
@@ -191,12 +104,12 @@ sized at 100 contracts per leg
     ! priced from top of book only — size not verified against real depth
     ! one side names a year the other does not
 
-[16] confidence 0.49   mid gap -2.0pp   edge +0.49pp  <-- CANDIDATE, VERIFY RULES
-    +1.3% annualised over 138 days of locked capital
-    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 1,813,382
+[9] confidence 0.49   mid gap -2.0pp   edge +0.49pp  <-- CANDIDATE, VERIFY RULES
+    +1.3% annualised over 137 days of locked capital
+    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 1,815,035
       Who will be the next the head of state or government of Iran? — Reza Pahlavi
       KXPAHLAVIHEAD-27JAN-RPAH  https://kalshi.com/markets/kxpahlavihead-27jan
-    polymarket   5.5%  [bid   5.0 / ask   6.0]  vol 2,196,028
+    polymarket   5.5%  [bid   5.0 / ask   6.0]  vol 2,197,373
       Will Reza Pahlavi enter Iran by December 31?
       https://polymarket.com/market/will-reza-pahlavi-enter-iran-by-december-31-898-927
     similarity: title 0.52  rules 0.48  dates 1.00  (2d apart)
@@ -204,81 +117,171 @@ sized at 100 contracts per leg
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[17] confidence 0.72   mid gap +1.8pp   edge +0.45pp  <-- CANDIDATE, VERIFY RULES
-    +1.2% annualised over 138 days of locked capital
-    kalshi       6.2%  [bid   6.1 / ask   6.4]  vol 26,935,939
+[10] confidence 0.56   mid gap +2.1pp   edge +0.51pp  <-- CANDIDATE, VERIFY RULES
+    +1.3% annualised over 143 days of locked capital
+    kalshi       2.5%  [bid   1.0 / ask   3.9]  vol 413,280
+      Will Edmundo González Urrutia be the head of state of Venezuela on Dec 31, 2026?
+      KXVENEZUELALEADER-26DEC31-EGON  https://kalshi.com/markets/kxvenezuelaleader-26dec31
+    polymarket   0.4%  [bid   0.3 / ask   0.4]  vol 1,213,296
+      Will Edmundo González be the leader of Venezuela end of 2026?
+      https://polymarket.com/market/will-edmundo-gonzlez-be-the-leader-of-venezuela-end-of-2026
+    similarity: title 0.74  rules 0.43  dates 0.75  (8d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9949 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side states a numeric threshold, the other does not
+
+[11] confidence 0.47   mid gap +3.1pp   edge +0.48pp  <-- CANDIDATE, VERIFY RULES
+    +1.3% annualised over 138 days of locked capital
+    kalshi       5.0%  [bid   3.0 / ask   7.0]  vol 13,082
+      Will Donald Trump receive a presidential pardon before Jan 1, 2027?
+      KXTRUMPPARDON-27JAN01-DJT  https://kalshi.com/markets/kxtrumppardon-27jan01
+    polymarket   1.9%  [bid   1.7 / ask   2.2]  vol 52,917
+      Will Trump pardon Elon Musk before 2027?
+      https://polymarket.com/market/will-trump-pardon-elon-musk-before-2027
+    similarity: title 0.49  rules 0.51  dates 0.90  (3d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9952 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side states a numeric threshold, the other does not
+
+[12] confidence 0.72   mid gap +1.8pp   edge +0.45pp  <-- CANDIDATE, VERIFY RULES
+    +1.2% annualised over 137 days of locked capital
+    kalshi       6.3%  [bid   6.1 / ask   6.5]  vol 26,958,533
       Will the U.S. confirm that aliens exist before 2027?
       KXALIENS-27  https://kalshi.com/markets/kxaliens-27
-    polymarket   4.5%  [bid   4.0 / ask   5.0]  vol 36,873,101
+    polymarket   4.5%  [bid   4.0 / ask   5.0]  vol 36,886,693
       Will the US confirm that aliens exist before 2027? — December 31
       https://polymarket.com/market/will-the-us-confirm-that-aliens-exist-before-2027-789-924-249
-    similarity: title 0.91  rules 0.55  dates 1.00  (2d apart)
+    similarity: title 0.91  rules 0.56  dates 1.00  (2d apart)
     trade: buy YES polymarket / NO kalshi — pay $0.9955 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[18] confidence 0.54   mid gap -2.0pp   edge +0.38pp  <-- CANDIDATE, VERIFY RULES
-    +1.0% annualised over 145 days of locked capital
-    kalshi       4.5%  [bid   4.0 / ask   5.0]  vol 50,949
+[13] confidence 0.63   mid gap +1.4pp   edge +0.27pp  <-- CANDIDATE, VERIFY RULES
+    +1.2% annualised over 83 days of locked capital
+    kalshi      97.6%  [bid  97.4 / ask  97.9]  vol 18,730
+      What states will redistrict before the 2026 Congressional elections? — North Carolina
+      KXREDISTRICTING-26-NC  https://kalshi.com/markets/kxredistricting-26
+    polymarket  96.2%  [bid  95.6 / ask  96.8]  vol 11,909
+      Will North Carolina use a new congressional map for the 2026 United States midterm elec…
+      https://polymarket.com/market/will-north-carolina-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
+    similarity: title 0.53  rules 0.65  dates 0.90  (6d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9973 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+
+[14] confidence 0.64   mid gap +1.1pp   edge +0.43pp  <-- CANDIDATE, VERIFY RULES
+    +1.2% annualised over 137 days of locked capital
+    kalshi       4.5%  [bid   4.4 / ask   4.6]  vol 1,481,302
+      Will Trump buy Greenland? — Before 2027
+      KXGREENLAND-29-27  https://kalshi.com/markets/kxgreenland-29
+    polymarket   3.4%  [bid   3.3 / ask   3.5]  vol 35,301,838
+      Will Trump acquire Greenland before 2027?
+      https://polymarket.com/market/will-trump-acquire-greenland-before-2027
+    similarity: title 0.66  rules 0.39  dates 1.00  (2d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9957 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+
+[15] confidence 0.54   mid gap -3.0pp   edge +0.38pp  <-- CANDIDATE, VERIFY RULES
+    +1.0% annualised over 144 days of locked capital
+    kalshi       4.5%  [bid   4.0 / ask   5.0]  vol 50,954
       Will Costco change the price of hot dog combo before 2027?
       COSTCOHOTDOG-27  https://kalshi.com/markets/costcohotdog
-    polymarket   6.5%  [bid   6.0 / ask   7.0]  vol 10,299
+    polymarket   7.5%  [bid   6.0 / ask   9.0]  vol 10,299
       Costco increases hotdog price before 2027?
       https://polymarket.com/market/costco-increases-hotdog-price-before-2027
     similarity: title 0.41  rules 0.66  dates 0.75  (9d apart)
     trade: buy YES kalshi / NO polymarket — pay $0.9962 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
 
-[19] confidence 0.59   mid gap +1.2pp   edge +0.25pp  <-- CANDIDATE, VERIFY RULES
-    +0.6% annualised over 144 days of locked capital
+[16] confidence 0.46   mid gap +1.3pp   edge +0.38pp  <-- CANDIDATE, VERIFY RULES
+    +1.0% annualised over 144 days of locked capital
+    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 44,025
+      Will Houston win the MLS Cup?
+      KXMLSCUP-26-HOU  https://kalshi.com/markets/kxmlscup-26
+    polymarket   2.2%  [bid   2.2 / ask   2.3]  vol 474,925
+      Will Houston Dynamo FC win the 2026 MLS Cup?
+      https://polymarket.com/market/will-houston-dynamo-fc-win-the-2026-mls-cup
+    similarity: title 0.68  rules 0.44  dates 0.50  (21d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9962 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side names a year the other does not
+
+[17] confidence 0.59   mid gap +1.2pp   edge +0.25pp  <-- CANDIDATE, VERIFY RULES
+    +0.6% annualised over 143 days of locked capital
     kalshi       1.4%  [bid   0.5 / ask   2.2]  vol 16,869
       Will Dinorah Figuera be the head of state of Venezuela on Dec 31, 2026?
       KXVENEZUELALEADER-26DEC31-DFIG  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.1%  [bid   0.1 / ask   0.2]  vol 2,970,037
+    polymarket   0.1%  [bid   0.1 / ask   0.2]  vol 2,974,334
       Will Dinorah Figuera be the leader of Venezuela end of 2026?
       https://polymarket.com/market/will-dinorah-figuera-be-the-leader-of-venezuela-end-of-2026
-    similarity: title 0.78  rules 0.45  dates 0.75  (8d apart)
+    similarity: title 0.79  rules 0.45  dates 0.75  (8d apart)
     trade: buy YES polymarket / NO kalshi — pay $0.9975 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[20] confidence 0.52   mid gap -2.0pp   edge +0.27pp  <-- CANDIDATE, VERIFY RULES
-    +0.6% annualised over 175 days of locked capital
-    kalshi       5.5%  [bid   5.0 / ask   6.0]  vol 3,293,330
-      Will there be a recession in 2026? — Starts
-      KXRECSSNBER-26  https://kalshi.com/markets/kxrecssnber-26
-    polymarket   7.5%  [bid   7.0 / ask   8.0]  vol 1,703,752
-      US recession by end of 2026?
-      https://polymarket.com/market/us-recession-by-end-of-2026
-    similarity: title 0.48  rules 0.44  dates 0.75  (8d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9973 per contract for $1.00 at settlement (both venues' fees included)
+[18] confidence 0.53   mid gap -3.0pp   edge +0.18pp  <-- CANDIDATE, VERIFY RULES
+    +0.5% annualised over 137 days of locked capital
+    kalshi       6.5%  [bid   5.0 / ask   7.9]  vol 573,182
+      Will the Fed cut rates more than 25 bps in 2026?
+      KXLARGECUT-26  https://kalshi.com/markets/kxlargecut-26
+    polymarket   9.5%  [bid   9.0 / ask  10.0]  vol 2,547,710
+      Will 1 Fed rate cut happen in 2026? — 1 (25 bps)
+      https://polymarket.com/market/will-1-fed-rate-cut-happen-in-2026
+    similarity: title 0.63  rules 0.39  dates 1.00  (2d apart)
+    trade: buy YES kalshi / NO polymarket — pay $0.9982 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
+    ! secondary figures differ ([1.0])
 
-[21] confidence 0.53   mid gap -1.2pp   edge +0.03pp  <-- CANDIDATE, VERIFY RULES
-    +0.1% annualised over 144 days of locked capital
-    kalshi       2.5%  [bid   2.0 / ask   3.0]  vol 105,850
-      Will Bruno Mars be the #1 most streamed Artist on the 2026 Spotify Wrapped Top 10 Artis…
-      KXTOPARTISTUSA-26-BRUN  https://kalshi.com/markets/kxtopartistusa-26
-    polymarket   3.7%  [bid   3.4 / ask   3.9]  vol 408,354
-      Will Bruno Mars be the top artist for 2026?
-      https://polymarket.com/market/will-bruno-mars-be-the-top-spotify-artist-for-2026
-    similarity: title 0.59  rules 0.63  dates 0.75  (8d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9997 per contract for $1.00 at settlement (both venues' fees included)
+[19] confidence 0.55   mid gap +1.2pp   edge +0.15pp  <-- CANDIDATE, VERIFY RULES
+    +0.4% annualised over 137 days of locked capital
+    kalshi       4.6%  [bid   4.1 / ask   5.1]  vol 500,969
+      Will the United States acquire any part of Greenland before Jan 1, 2027? — Before 2027
+      KXGREENTERRITORY-29-27  https://kalshi.com/markets/kxgreenterritory-29
+    polymarket   3.4%  [bid   3.3 / ask   3.5]  vol 35,301,838
+      Will Trump acquire Greenland before 2027?
+      https://polymarket.com/market/will-trump-acquire-greenland-before-2027
+    similarity: title 0.67  rules 0.41  dates 1.00  (2d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9985 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[22] confidence 0.65   mid gap +17.0pp   edge +0.00pp
-    kalshi      50.5%  [bid  48.0 / ask  53.0]  vol 11,840
-      Will exactly 5 Starship launches reach space in 2026?
-      KXSTARSHIPSPACE-26-5.0  https://kalshi.com/markets/kxstarshipspace-26
-    polymarket  33.5%  [bid  31.0 / ask  36.0]  vol 99,104
-      Will less than 5 SpaceX Starship launches successfully reach Space in 2026? — <5
-      https://polymarket.com/market/will-less-than-5-spacex-starship-launches-successfully-reach-space-in-2026
-    similarity: title 0.69  rules 0.35  dates 1.00  (2d apart)
+[20] confidence 0.63   mid gap -2.2pp   edge +0.07pp  <-- CANDIDATE, VERIFY RULES
+    +0.3% annualised over 83 days of locked capital
+    kalshi       2.3%  [bid   1.0 / ask   3.5]  vol 85,240
+      What states will redistrict before the 2026 Congressional elections? — Indiana
+      KXREDISTRICTING-26-IND  https://kalshi.com/markets/kxredistricting-26
+    polymarket   4.5%  [bid   4.0 / ask   5.0]  vol 34,456
+      Will Indiana use a new congressional map for the 2026 United States midterm elections?
+      https://polymarket.com/market/will-indiana-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
+    similarity: title 0.53  rules 0.66  dates 0.90  (6d apart)
+    trade: buy YES kalshi / NO polymarket — pay $0.9993 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+
+[21] confidence 0.53   mid gap +3.5pp   edge +0.05pp  <-- CANDIDATE, VERIFY RULES
+    +0.1% annualised over 137 days of locked capital
+    kalshi      10.0%  [bid   9.0 / ask  11.0]  vol 57,164
+      What kind of device will Jony Ive and OpenAI announce? — Earbuds/Headphones
+      KXOAIHARDWARE-27-EARBUDS  https://kalshi.com/markets/kxoaihardware-27
+    polymarket   6.5%  [bid   5.0 / ask   8.0]  vol 122,353
+      Will OpenAI announce earbuds or headphones in 2026? — Earbuds/Headphones
+      https://polymarket.com/market/will-openai-announce-earbuds-or-headphones-in-2026
+    similarity: title 0.63  rules 0.46  dates 1.00  (2d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9995 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side names a year the other does not
+
+[22] confidence 0.55   mid gap -10.0pp   edge +0.00pp
+    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 23,812
+      Will Los Angeles G win the MLS Cup?
+      KXMLSCUP-26-LAG  https://kalshi.com/markets/kxmlscup-26
+    polymarket  11.5%  [bid  11.0 / ask  12.0]  vol 47,344
+      Will Los Angeles FC win the 2026 MLS Cup?
+      https://polymarket.com/market/will-los-angeles-fc-win-the-2026-mls-cup
+    similarity: title 0.85  rules 0.43  dates 0.50  (21d apart)
     no two-sided liquidity at requested size
+    ! one side names a year the other does not
 
 [23] confidence 0.53   mid gap -8.8pp   edge +0.00pp
-    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 1,301,480
+    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 1,302,080
       Will Max Verstappen win the F1 Drivers Championship?
       KXF1-26-MV  https://kalshi.com/markets/kxf1-26
     polymarket  10.3%  [bid  10.3 / ask  10.4]  vol 25,839
@@ -288,27 +291,27 @@ sized at 100 contracts per leg
     no two-sided liquidity at requested size
     ! one side names a year the other does not
 
-[24] confidence 0.55   mid gap -9.0pp   edge +0.00pp
-    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 23,775
-      Will Los Angeles G win the MLS Cup?
-      KXMLSCUP-26-LAG  https://kalshi.com/markets/kxmlscup-26
-    polymarket  10.5%  [bid  10.0 / ask  11.0]  vol 47,194
-      Will Los Angeles FC win the 2026 MLS Cup?
-      https://polymarket.com/market/will-los-angeles-fc-win-the-2026-mls-cup
-    similarity: title 0.85  rules 0.43  dates 0.50  (21d apart)
-    no two-sided liquidity at requested size
-    ! one side names a year the other does not
-
-[25] confidence 0.49   mid gap +8.4pp   edge +0.00pp
-    kalshi      11.5%  [bid   9.0 / ask  14.0]  vol 9,376
+[24] confidence 0.49   mid gap +9.0pp   edge +0.00pp
+    kalshi      12.0%  [bid  10.0 / ask  14.0]  vol 9,409
       Will any Republican member of Congress calls on Trump to be removed as President throug…
       KXMOCTRUMP25-26-JAN01  https://kalshi.com/markets/kxmoctrump25-26
-    polymarket   3.1%  [bid   2.9 / ask   3.3]  vol 48,993
+    polymarket   3.0%  [bid   2.9 / ask   3.2]  vol 49,110
       Trump removed via 25th Amendment before 2027?
       https://polymarket.com/market/trump-removed-via-25th-amendment-before-2027
     similarity: title 0.59  rules 0.50  dates 0.75  (9d apart)
     no two-sided liquidity at requested size
     ! secondary figures differ ([1.0])
+
+[25] confidence 0.61   mid gap +3.8pp   edge +0.00pp
+    kalshi       4.0%  [bid   4.0 / ask   4.1]  vol 84,912
+      Will Diosdado Cabello Rondón be the head of state of Venezuela on Dec 31, 2026?
+      KXVENEZUELALEADER-26DEC31-DRON  https://kalshi.com/markets/kxvenezuelaleader-26dec31
+    polymarket   0.3%  [bid   0.2 / ask   0.4]  vol 2,088,319
+      Will Diosdado Cabello Rondón be the leader of Venezuela end of 2026?
+      https://polymarket.com/market/will-diosdado-cabello-rondn-be-the-leader-of-venezuela-end-of-2026
+    similarity: title 0.83  rules 0.44  dates 0.75  (8d apart)
+    no two-sided liquidity at requested size
+    ! one side states a numeric threshold, the other does not
 
 Confidence is a text-similarity estimate. It is not evidence that the two
 contracts resolve on the same criteria, and a mismatch there turns a hedge

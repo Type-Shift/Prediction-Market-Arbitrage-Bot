@@ -42,6 +42,11 @@ class ServerCase(unittest.TestCase):
         self._saved_key = os.environ.pop("ANTHROPIC_API_KEY", None)
         self.addCleanup(self._restore_key)
 
+        # No accidental dispatch: a stray ARB_REMOTE_SCAN in the environment
+        # must not turn these local-scan tests into GitHub Actions runs.
+        self._saved_remote = os.environ.pop("ARB_REMOTE_SCAN", None)
+        self.addCleanup(self._restore_remote)
+
         self._saved = (app.RESULTS_DIR, a.PAPER_PATH, b.BOT_PATH,
                        s.LAST_RUN_PATH, s.LABELS_PATH)
         app.RESULTS_DIR = os.path.join(self.dir, "results")
@@ -78,6 +83,12 @@ class ServerCase(unittest.TestCase):
             os.environ["ANTHROPIC_API_KEY"] = self._saved_key
         else:
             os.environ.pop("ANTHROPIC_API_KEY", None)
+
+    def _restore_remote(self):
+        if self._saved_remote is not None:
+            os.environ["ARB_REMOTE_SCAN"] = self._saved_remote
+        else:
+            os.environ.pop("ARB_REMOTE_SCAN", None)
 
     # -- helpers -----------------------------------------------------------
 
@@ -393,6 +404,83 @@ class TestJudgeOnScan(ServerCase):
         self.assertTrue(os.path.exists(os.path.join(app.RESULTS_DIR, "judged.json")))
         self.assertTrue(state["pairs"])
         self.assertEqual(state["pairs"][0]["llm_verdict"]["verdict"], "likely_equivalent")
+
+
+class TestRemoteScan(ServerCase):
+    """A remote scan dispatches the workflow and pulls the result back.
+
+    gh and git are stubbed through app.run_cmd, so this exercises the whole
+    dispatch -> poll -> pull -> /api/state path with nothing leaving the machine
+    and no dependency on a real login.
+    """
+
+    def setUp(self):
+        super().setUp()  # clears any stray ARB_REMOTE_SCAN first
+        os.environ["ARB_REMOTE_SCAN"] = "1"
+        self.addCleanup(os.environ.pop, "ARB_REMOTE_SCAN", None)
+        self._orig_cmd, self._orig_gh = app.run_cmd, app.gh_path
+        app.gh_path = lambda: "C:/fake/gh.exe"
+        app.run_cmd = self._fake_cmd
+        self.addCleanup(lambda: setattr(app, "run_cmd", self._orig_cmd))
+        self.addCleanup(lambda: setattr(app, "gh_path", self._orig_gh))
+        self._list_calls = 0
+        self.conclusion = "success"
+
+    def _fake_cmd(self, args, timeout=60):
+        head = args[:3]
+        if head == ["gh", "workflow", "run"]:
+            return (0, "", "")
+        if head == ["gh", "run", "list"]:
+            self._list_calls += 1
+            # The first list (before dispatch) is the prior "latest" id; after
+            # that a new run id appears, which is the one we dispatched.
+            rid = 100 if self._list_calls == 1 else 101
+            return (0, json.dumps([{"databaseId": rid, "status": "queued",
+                                    "conclusion": None, "url": f"https://gh/{rid}",
+                                    "createdAt": "2026-08-17T00:00:00Z"}]), "")
+        if head == ["gh", "run", "view"]:
+            return (0, json.dumps({"status": "completed",
+                                   "conclusion": self.conclusion,
+                                   "url": "https://gh/101"}), "")
+        if args[:2] == ["git", "-C"]:
+            # The workflow commits results; a pull/checkout lands them on disk.
+            if "pull" in args or "checkout" in args:
+                self._write_results()
+            return (0, "", "")
+        return (0, "", "")
+
+    def _write_results(self):
+        rec = [{"kalshi": {"id": "RK1"}, "polymarket": {"url": "https://poly/rk1"},
+                "edge": 0.05, "annualised_edge": 0.2}]
+        with open(os.path.join(app.RESULTS_DIR, "latest.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(rec, fh)
+        with open(os.path.join(app.RESULTS_DIR, "meta.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump({"generated_at": "2026-08-17T00:00:00Z"}, fh)
+
+    def test_state_reports_remote_default(self):
+        _, state = self.get("/api/state")
+        self.assertTrue(state["remote"]["default"])
+        self.assertTrue(state["remote"]["available"])
+
+    def test_remote_scan_dispatches_and_pulls_results(self):
+        state = self.scan_and_wait()
+        self.assertIsNone(state["run"]["last_error"])
+        self.assertTrue(state["pairs"])
+        self.assertEqual(state["pairs"][0]["kalshi"]["id"], "RK1")
+
+    def test_a_failed_run_surfaces_as_an_error(self):
+        self.conclusion = "failure"
+        state = self.scan_and_wait()
+        self.assertIsNotNone(state["run"]["last_error"])
+        self.assertIn("failure", state["run"]["last_error"])
+
+    def test_gh_missing_is_a_clear_refusal(self):
+        app.gh_path = lambda: None
+        status, body = self.post("/api/scan", {})   # remote default, gh gone
+        self.assertEqual(status, 409)
+        self.assertIn("gh", body["message"])
 
 
 if __name__ == "__main__":

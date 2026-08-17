@@ -64,11 +64,33 @@
     App.bot = state.bot || null;
     App.run = state.run || null;
     App.judge = state.judge || null;
+    App.remote = state.remote || null;
     // Labels come from labels.json on disk now, not localStorage — the file
     // score and sweep already read. The Labels view writes back through
     // /api/labels, so the export-and-copy-the-file step is gone.
     if (Array.isArray(state.labels)) App.labels = state.labels;
     reflectJudge();
+    reflectRemote();
+  }
+
+  /** Whether a click of Run scan should be handed to GitHub Actions instead of
+      run on this machine — the server's default, and only when gh is present. */
+  function remoteOn() {
+    return !!(App.remote && App.remote.default && App.remote.available);
+  }
+
+  /** Show whether scans run in the cloud (to get past a network that blocks the
+      venues), or if that was asked for but the GitHub CLI is missing. */
+  function reflectRemote() {
+    const flag = $("remote-flag");
+    if (!flag) return;
+    const wanted = App.remote && App.remote.default;
+    flag.hidden = !wanted;
+    if (!wanted) return;
+    flag.textContent = App.remote.available
+      ? "↗ scan runs on GitHub Actions"
+      : "GitHub CLI (gh) not found — scans run on this machine";
+    flag.classList.toggle("is-warn", !App.remote.available);
   }
 
   /** Show whether a scan will be reviewed by the model — i.e. whether the
@@ -150,8 +172,9 @@
 
   async function startScan() {
     try {
-      await post("/api/scan", {});
-      setRunning(true, "starting…");
+      const remote = remoteOn();
+      await post("/api/scan", { remote: remote });
+      setRunning(true, remote ? "dispatching to GitHub Actions…" : "starting…");
     } catch (err) {
       // 409 is the expected answer to a second click while a scan is running.
       // It is information, not a failure — say so in the status line rather

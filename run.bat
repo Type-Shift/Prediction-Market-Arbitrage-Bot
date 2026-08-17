@@ -54,6 +54,24 @@ if defined ANTHROPIC_API_KEY echo   Model review is ON - Opus reviews each scan.
 if not defined ANTHROPIC_API_KEY echo   Model review is off - set ANTHROPIC_API_KEY or add anthropic_key.txt to enable it.
 echo.
 
+rem ---------------------------------------------------------------------------
+rem  Remote scanning. The prediction venues are blocked on some networks (a
+rem  school or office filter), so by default each scan runs on GitHub's runners
+rem  -- which are not behind the filter -- and the results are pulled back. This
+rem  needs the GitHub CLI (gh), installed and logged in. Set ARB_REMOTE_SCAN=0
+rem  before running to scan on this machine instead.
+rem ---------------------------------------------------------------------------
+if not defined ARB_REMOTE_SCAN set "ARB_REMOTE_SCAN=1"
+where gh >nul 2>nul
+if errorlevel 1 (
+  echo   Remote scan wants the GitHub CLI 'gh', not found on PATH - scans will
+  echo   run on this machine. Install gh from https://cli.github.com/ to bypass
+  echo   a network that blocks the venues.
+) else (
+  if not "%ARB_REMOTE_SCAN%"=="0" echo   Scans run on GitHub Actions to bypass a blocked network.
+)
+echo.
+
 rem --open waits until the port is actually bound before launching the browser,
 rem so the tab never lands on a page that is not being served yet.
 %PY% app.py --open %*

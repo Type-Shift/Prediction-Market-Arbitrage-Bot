@@ -551,6 +551,18 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
   align-self: center;
 }
 
+.remote-flag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  align-self: center;
+}
+
+.remote-flag.is-warn {
+  color: var(--neg);
+}
+
 th.llm-col, td.llm-col { width: 78px; }
 .vcell { display: flex; }
 .vbadge {

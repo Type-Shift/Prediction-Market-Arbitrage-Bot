@@ -32,6 +32,8 @@ import io
 import json
 import os
 import queue
+import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -48,6 +50,56 @@ import scanner
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(HERE, "results")
+
+# Remote scanning. When the venues are blocked (a school or office filter),
+# the scan can run on GitHub's runners instead, which are not behind the
+# filter, and its committed results pulled back. run.bat sets ARB_REMOTE_SCAN
+# so the desktop shortcut does this by default.
+REPO_DIR = HERE
+REMOTE_WORKFLOW = os.environ.get("ARB_REMOTE_WORKFLOW", "scan.yml")
+REMOTE_BRANCH = os.environ.get("ARB_REMOTE_BRANCH", "main")
+
+
+def _truthy(value) -> bool:
+    return bool(value) and str(value).strip().lower() not in ("0", "false", "no", "off")
+
+
+def gh_path():
+    """Full path to the GitHub CLI, or None if it is not installed."""
+    return shutil.which("gh")
+
+
+def run_cmd(args: list[str], timeout: int = 60) -> tuple[int, str, str]:
+    """Run a command, returning (returncode, stdout, stderr); never raise.
+
+    A missing executable or a timeout comes back as a non-zero code with the
+    reason in stderr, so remote scanning degrades to a message the browser can
+    show rather than a traceback on the scan thread. This is the single choke
+    point every gh/git call goes through, which is also what lets the tests
+    stub the network out.
+    """
+    try:
+        proc = subprocess.run(args, capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=timeout)
+        return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
+    except FileNotFoundError as exc:
+        return 127, "", str(exc)
+    except subprocess.TimeoutExpired:
+        return 124, "", f"timed out after {timeout}s"
+
+
+def remote_config() -> dict:
+    """Whether the dashboard should push scans to GitHub Actions.
+
+    `default` follows ARB_REMOTE_SCAN. `available` is a cheap check that gh is
+    even installed -- the login and repo checks happen when a scan is actually
+    dispatched, where their errors can be surfaced, rather than on every poll.
+    """
+    return {
+        "default": _truthy(os.environ.get("ARB_REMOTE_SCAN")),
+        "available": gh_path() is not None,
+        "workflow": REMOTE_WORKFLOW,
+    }
 
 # Long enough that an idle browser does not reconnect constantly, short enough
 # that a proxy holding the connection open does not decide it is dead.
@@ -196,7 +248,7 @@ class Runner:
 
     # -- starting a scan ---------------------------------------------------
 
-    def start(self, flags: list[str]) -> tuple[bool, str]:
+    def start(self, flags: list[str], remote: bool = False) -> tuple[bool, str]:
         with self.lock:
             if self.running:
                 return False, "a scan is already running"
@@ -205,7 +257,8 @@ class Runner:
             self.started_at = time.time()
             self.last_error = None
             self.log = []
-        threading.Thread(target=self._run, args=(flags,), daemon=True).start()
+        target = self._run_remote if remote else self._run
+        threading.Thread(target=target, args=(flags,), daemon=True).start()
         return True, "started"
 
     def _publish_line(self, line: str) -> None:
@@ -343,6 +396,126 @@ class Runner:
             traceback.print_exc(file=sys.__stderr__)
             BUS.publish("bot-failed", {"error": f"{type(exc).__name__}: {exc}"})
             return None
+
+    # -- running the scan on GitHub Actions -------------------------------
+
+    def _run_remote(self, flags: list[str]) -> None:
+        """Run the scan on GitHub's runners, then pull back what it committed.
+
+        The venues are unreachable from a filtered network, but GitHub's
+        runners are not behind it. So dispatch the `scan` workflow, wait for it,
+        and fast-forward its committed results into place. `flags` is ignored:
+        the workflow defines its own scan; this triggers and collects it. The
+        workflow also runs the model review, so verdicts arrive with the pull --
+        no separate local review is needed.
+        """
+        BUS.publish("run-start", {"at": iso_now(), "remote": True})
+        try:
+            self._publish_line("dispatching a scan to GitHub Actions...")
+            before = self._latest_run_id()
+            rc, _out, err = run_cmd(
+                ["gh", "workflow", "run", REMOTE_WORKFLOW, "--ref", REMOTE_BRANCH],
+                timeout=30)
+            if rc != 0:
+                raise RuntimeError(err or "could not dispatch the workflow "
+                                   "(is gh installed and logged in?)")
+
+            run = self._await_new_run(before, timeout=120)
+            if not run:
+                raise RuntimeError("the run did not appear on GitHub in time")
+            self._publish_line(f"queued on GitHub: {run.get('url', '')}")
+            run = self._poll_run(run["databaseId"], timeout=900)
+            if run.get("conclusion") != "success":
+                raise RuntimeError(
+                    f"the GitHub run finished '{run.get('conclusion')}' "
+                    f"-- see {run.get('url', '')}")
+
+            self._publish_line("scan finished on GitHub; pulling the results...")
+            self._pull_results()
+            self.records = load_committed_pairs()
+            self.meta = load_committed_meta()
+            cycle = self._run_bot(self.records)
+            BUS.publish("run-done", {"meta": self.meta, "kept": len(self.records),
+                                     "cycle": cycle, "remote": True})
+        except Exception as exc:  # noqa: BLE001 - the thread must not die silently
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            traceback.print_exc(file=sys.__stderr__)
+            BUS.publish("run-failed", {"error": self.last_error})
+        finally:
+            with self.lock:
+                self.running = False
+                self.started_at = None
+
+    def _gh_runs(self, limit: int) -> list[dict]:
+        rc, out, err = run_cmd(
+            ["gh", "run", "list", "--workflow", REMOTE_WORKFLOW, "--limit",
+             str(limit), "--json", "databaseId,status,conclusion,url,createdAt"],
+            timeout=30)
+        if rc != 0:
+            raise RuntimeError(err or "could not list the workflow runs")
+        try:
+            runs = json.loads(out or "[]")
+        except json.JSONDecodeError:
+            runs = []
+        return runs if isinstance(runs, list) else []
+
+    def _latest_run_id(self):
+        runs = self._gh_runs(1)
+        return runs[0]["databaseId"] if runs else None
+
+    def _await_new_run(self, before, timeout: int):
+        """Poll until a run newer than `before` shows up, or give up."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            for run in self._gh_runs(5):
+                if run.get("databaseId") != before:
+                    return run
+            time.sleep(3)
+        return None
+
+    def _poll_run(self, run_id, timeout: int) -> dict:
+        """Poll one run until it completes, streaming each status change."""
+        deadline = time.time() + timeout
+        last = None
+        while time.time() < deadline:
+            rc, out, _err = run_cmd(
+                ["gh", "run", "view", str(run_id), "--json",
+                 "status,conclusion,url"], timeout=30)
+            if rc == 0:
+                try:
+                    run = json.loads(out)
+                except json.JSONDecodeError:
+                    run = {}
+                status = run.get("status")
+                if status and status != last:
+                    last = status
+                    self._publish_line(f"  GitHub: {status.replace('_', ' ')}...")
+                if status == "completed":
+                    return run
+            time.sleep(5)
+        raise RuntimeError("timed out waiting for the GitHub run to finish")
+
+    def _pull_results(self) -> None:
+        """Bring the workflow's committed results into the working tree.
+
+        A fast-forward pull is the clean case. If local changes block it (a
+        prior local scan wrote results/, or the tree is otherwise dirty), fall
+        back to checking out just results/ from the remote so the scan still
+        lands its output. Never force -- a genuinely diverged tree is the user's
+        to sort out.
+        """
+        run_cmd(["git", "-C", REPO_DIR, "checkout", "--", "results"], timeout=30)
+        rc, _out, _err = run_cmd(["git", "-C", REPO_DIR, "pull", "--ff-only"],
+                                 timeout=90)
+        if rc == 0:
+            return
+        self._publish_line("  fast-forward blocked; fetching results only")
+        run_cmd(["git", "-C", REPO_DIR, "fetch", "origin", REMOTE_BRANCH], timeout=90)
+        rc, _out, err = run_cmd(
+            ["git", "-C", REPO_DIR, "checkout", f"origin/{REMOTE_BRANCH}",
+             "--", "results"], timeout=30)
+        if rc != 0:
+            raise RuntimeError(f"could not fetch results: {err}")
 
     # -- bot actions -------------------------------------------------------
 
@@ -570,7 +743,14 @@ class Handler(SimpleHTTPRequestHandler):
 
         if route == "/api/scan":
             flags = [str(f) for f in (body.get("flags") or [])]
-            ok, message = self.runner.start(flags)
+            cfg = remote_config()
+            remote = bool(body.get("remote", cfg["default"]))
+            if remote and not cfg["available"]:
+                return self.send_json(
+                    {"ok": False, "message": "remote scanning needs the GitHub "
+                     "CLI (gh) on PATH; retry with {\"remote\": false} to scan "
+                     "locally"}, 409)
+            ok, message = self.runner.start(flags, remote=remote)
             return self.send_json({"ok": ok, "message": message},
                                   200 if ok else 409)
 
@@ -616,6 +796,7 @@ class Handler(SimpleHTTPRequestHandler):
             "labels": scanner.load_labels(),
             "bot": runner.bot_snapshot(),
             "judge": {"enabled": bool(judge.get_api_key()), "model": runner.judge_model},
+            "remote": remote_config(),
         }
 
     def stream_events(self) -> None:

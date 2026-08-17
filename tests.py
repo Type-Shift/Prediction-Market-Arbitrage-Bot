@@ -298,6 +298,61 @@ class TestPolymarketPagination(unittest.TestCase):
             s.http_get_json = original
         self.assertEqual(len(rows), 1)
 
+    def test_midscan_drop_keeps_partial(self):
+        calls = []
+
+        def fake(url, **kw):
+            calls.append(url)
+            if len(calls) == 1:
+                return {"markets": [{"id": "m1", "volumeNum": 2}],
+                        "next_cursor": "NEXT"}
+            raise s.FetchError("Remote end closed connection without response")
+
+        original = s.http_get_json
+        s.http_get_json = fake
+        try:
+            rows = s.fetch_polymarket(1000, 0, 0, verbose=False)
+        finally:
+            s.http_get_json = original
+        # Page two's connection dropped, but page one's market survives.
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(rows), 1)
+
+
+class TestKalshiPagination(unittest.TestCase):
+    def test_midscan_drop_keeps_partial(self):
+        calls = []
+
+        def fake(url, **kw):
+            calls.append(url)
+            if len(calls) == 1:
+                return {"markets": [{"ticker": "T1", "volume": 5},
+                                    {"ticker": "T2", "volume": 3}],
+                        "cursor": "NEXT"}
+            raise s.FetchError("Remote end closed connection without response")
+
+        original = s.http_get_json
+        s.http_get_json = fake
+        try:
+            pool = s.fetch_kalshi(0, 0, 10_000, [], verbose=False)
+        finally:
+            s.http_get_json = original
+        # A drop on page two keeps page one rather than losing the whole scan.
+        self.assertEqual(len(calls), 2)
+        self.assertEqual({r["ticker"] for r in pool}, {"T1", "T2"})
+
+    def test_first_page_failure_is_fatal(self):
+        def fake(url, **kw):
+            raise s.FetchError("Remote end closed connection without response")
+
+        original = s.http_get_json
+        s.http_get_json = fake
+        try:
+            with self.assertRaises(s.FetchError):
+                s.fetch_kalshi(0, 0, 10_000, [], verbose=False)
+        finally:
+            s.http_get_json = original
+
 
 class TestScorePair(unittest.TestCase):
     def test_missing_rules_marks_pair_unknown(self):

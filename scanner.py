@@ -570,7 +570,21 @@ def fetch_kalshi(max_markets: int, horizon_days: int, scan_limit: int,
                 params["series_ticker"] = series_ticker
             if cursor:
                 params["cursor"] = cursor
-            payload = http_get_json(f"{KALSHI_API}/markets?" + urllib.parse.urlencode(params))
+            try:
+                payload = http_get_json(
+                    f"{KALSHI_API}/markets?" + urllib.parse.urlencode(params),
+                    retries=5)
+            except FetchError as exc:
+                # A page failed after earlier pages came through -- typically a
+                # flaky network (e.g. a school filter) dropping the connection
+                # mid-scan. Keep the markets already fetched and stop here rather
+                # than losing the whole run; only a first-page failure, with
+                # nothing gathered at all, is fatal.
+                if not raw:
+                    raise
+                print(f"warning: kalshi scan stopped early after {len(raw)} "
+                      f"markets ({exc})", file=sys.stderr)
+                break
             batch = payload.get("markets") or []
             raw.extend(batch)
             cursor = payload.get("cursor") or ""
@@ -665,8 +679,19 @@ def fetch_polymarket(max_markets: int, min_volume: float, horizon_days: int,
         params["limit"] = min(GAMMA_PAGE, max_markets - len(seen))
         if cursor:
             params["after_cursor"] = cursor
-        payload = http_get_json(f"{POLY_GAMMA_API}/markets/keyset?"
-                                + urllib.parse.urlencode(params))
+        try:
+            payload = http_get_json(
+                f"{POLY_GAMMA_API}/markets/keyset?" + urllib.parse.urlencode(params),
+                retries=5)
+        except FetchError as exc:
+            # As with Kalshi: a mid-scan connection drop keeps the markets
+            # already gathered rather than losing the run. Only a first-page
+            # failure, with nothing seen yet, is fatal.
+            if not seen:
+                raise
+            print(f"warning: polymarket scan stopped early after {len(seen)} "
+                  f"markets ({exc})", file=sys.stderr)
+            break
 
         if isinstance(payload, list):        # tolerate a bare-array response
             batch, next_cursor = payload, ""

@@ -27,6 +27,8 @@
   --kalshi-soft: rgba(47, 111, 219, 0.12);
   --poly:        #8250df;
   --poly-soft:   rgba(130, 80, 223, 0.12);
+  --predictit:      #0c8599;
+  --predictit-soft: rgba(12, 133, 153, 0.12);
 
   --shadow: 0 16px 48px rgba(16, 20, 26, 0.16);
 
@@ -61,6 +63,8 @@
     --kalshi-soft: rgba(86, 160, 255, 0.15);
     --poly:        #b58bff;
     --poly-soft:   rgba(181, 139, 255, 0.15);
+    --predictit:      #35c4d6;
+    --predictit-soft: rgba(53, 196, 214, 0.15);
 
     --shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
   }
@@ -88,6 +92,8 @@
   --kalshi-soft: rgba(86, 160, 255, 0.15);
   --poly:        #b58bff;
   --poly-soft:   rgba(181, 139, 255, 0.15);
+  --predictit:      #35c4d6;
+  --predictit-soft: rgba(53, 196, 214, 0.15);
 
   --shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
@@ -470,7 +476,7 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
   left: 50%; top: 0; bottom: 0;
   border-left: 1px dashed var(--border-strong);
 }
-.gapviz i { position: absolute; top: 3px; height: 8px; border-radius: 2px; }
+.gapviz i { position: absolute; top: 3px; height: 8px; border-radius: 2px; background: var(--vc, var(--text-faint)); }
 
 .meter {
   position: relative;
@@ -498,11 +504,21 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
   padding: 2px 6px;
   white-space: nowrap;
 }
-.badge.kalshi { background: var(--kalshi-soft); color: var(--kalshi); }
-.badge.polymarket { background: var(--poly-soft); color: var(--poly); }
+/* A venue badge takes its side's colour via the venue-<name> class below; an
+   unlisted venue falls back to a neutral tone rather than vanishing. */
+.badge[class*="venue-"] { background: var(--vc-soft, var(--bg-inset)); color: var(--vc, var(--text-dim)); }
 .badge.yes { background: var(--pos-soft); color: var(--pos); }
 .badge.no  { background: var(--neg-soft); color: var(--neg); }
 .badge.plain { background: var(--bg-inset); color: var(--text-dim); }
+
+/* ── venue colours ───────────────────────────────────────────────────── */
+/* Each side element carries a `venue-<name>` class. The class only maps to two
+   local vars; the contextual rules that colour by venue (the badge above, the
+   side rail, the market tick, the axis span, the gap bar) read them. So a new
+   venue is one palette token plus one rule here — nothing in the JS. */
+.venue-kalshi     { --vc: var(--kalshi);    --vc-soft: var(--kalshi-soft); }
+.venue-polymarket { --vc: var(--poly);      --vc-soft: var(--poly-soft); }
+.venue-predictit  { --vc: var(--predictit); --vc-soft: var(--predictit-soft); }
 
 .qpair { display: flex; flex-direction: column; gap: 1px; padding: 5px 0; }
 .qline {
@@ -518,9 +534,8 @@ table.board tbody tr.is-cut td { text-decoration: line-through solid var(--text-
   letter-spacing: 0.06em;
   flex: none;
   width: 14px;
+  color: var(--vc, var(--text-faint));
 }
-.qline.k .tick { color: var(--kalshi); }
-.qline.p .tick { color: var(--poly); }
 .qline .txt {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -777,12 +792,10 @@ table.plain tr:last-child td { border-bottom: none; }
 }
 
 .side {
-  border-left: 2px solid var(--border);
+  border-left: 2px solid var(--vc, var(--border));
   padding: 2px 0 2px 12px;
   margin-bottom: 12px;
 }
-.side.k { border-left-color: var(--kalshi); }
-.side.p { border-left-color: var(--poly); }
 .side-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .side-q { font-size: 13.5px; line-height: 1.4; }
 .side-meta { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 5px; }
@@ -805,9 +818,7 @@ table.plain tr:last-child td { border-bottom: none; }
   position: absolute; left: 0; right: 0; top: 16px;
   height: 2px; background: var(--bg-inset); border-radius: 1px;
 }
-.axisline .span { position: absolute; top: 12px; height: 10px; border-radius: 2px; opacity: 0.85; }
-.axisline .span.k { background: var(--kalshi); }
-.axisline .span.p { background: var(--poly); }
+.axisline .span { position: absolute; top: 12px; height: 10px; border-radius: 2px; opacity: 0.85; background: var(--vc, var(--text-dim)); }
 .axisline .tickmark {
   position: absolute; top: 26px;
   font-family: var(--mono); font-size: 9px; color: var(--text-faint);

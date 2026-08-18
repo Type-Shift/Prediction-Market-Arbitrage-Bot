@@ -155,8 +155,10 @@
       row.append(el("td", "muted", shortTime(pos.opened)));
 
       const pair = el("td");
-      pair.append(el("div", undefined, pos.kalshi_q || pos.kalshi_id));
-      pair.append(el("div", "faint", pos.poly_q || pos.poly_url));
+      // Position side fields follow the pair's generic a/b; fall back to the
+      // old kalshi/poly names so a position opened before the rename still shows.
+      pair.append(el("div", undefined, pos.a_q || pos.a_id || pos.kalshi_q || pos.kalshi_id));
+      pair.append(el("div", "faint", pos.b_q || pos.b_id || pos.poly_q || pos.poly_url));
       row.append(pair);
 
       row.append(el("td", "faint", pos.leg || "—"));
@@ -220,7 +222,7 @@
     for (const pos of snap.closed.slice().reverse()) {
       const row = el("tr");
       row.append(el("td", "muted", shortTime(pos.settled)));
-      row.append(el("td", undefined, pos.kalshi_q || pos.kalshi_id));
+      row.append(el("td", undefined, pos.a_q || pos.a_id || pos.kalshi_q || pos.kalshi_id));
 
       const label = { "hedged-win": "hedge held", "mismatch-loss": "mismatch",
                       "flattened": "flattened" }[pos.status] || pos.status;

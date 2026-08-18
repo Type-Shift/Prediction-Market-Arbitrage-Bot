@@ -168,8 +168,7 @@
 
     let tp = 0, fp = 0, tn = 0, fn = 0;
     for (const row of App.labels) {
-      const key = `${row.kalshi_id}|${row.poly_url}`;
-      const pair = byKey.get(key);
+      const pair = byKey.get(row.key);
       // Labels may refer to pairs from an older scan. Fall back to the values
       // stored on the label itself, which is what `score` does.
       const confidence = pair ? pair.confidence : row.confidence;
@@ -290,7 +289,7 @@
   let cursor = 0;
 
   function labelled() {
-    return new Set(App.labels.map((row) => `${row.kalshi_id}|${row.poly_url}`));
+    return new Set(App.labels.map((row) => row.key));
   }
 
   function unlabelledPairs() {
@@ -300,10 +299,9 @@
 
   function recordLabel(pair, label, note) {
     App.labels.push({
-      kalshi_id: pair.kalshi.id,
-      poly_url: pair.polymarket.url,
-      kalshi_question: pair.kalshi.question,
-      poly_question: pair.polymarket.question,
+      key: App.labelKey(pair),
+      a_venue: pair.a.venue, a_id: pair.a.id, a_question: pair.a.question,
+      b_venue: pair.b.venue, b_id: pair.b.id, b_question: pair.b.question,
       confidence: pair.confidence,
       rules_sim: pair.rules_similarity,
       edge: pair.edge,
@@ -324,10 +322,10 @@
       `${App.labels.length} labelled · ${queue.length} left`));
     card.append(head);
 
-    for (const [cls, side] of [["k", pair.kalshi], ["p", pair.polymarket]]) {
-      const box = el("div", "side " + cls);
+    for (const side of [pair.a, pair.b]) {
+      const box = el("div", "side venue-" + side.venue);
       const top = el("div", "side-head");
-      top.append(el("span", "badge " + side.venue, side.venue.toUpperCase()));
+      top.append(el("span", "badge venue-" + side.venue, side.venue.toUpperCase()));
       const link = el("a", "", "open ↗");
       link.href = side.url;
       link.target = "_blank";
@@ -389,7 +387,7 @@
         if (!Array.isArray(rows)) return;
         const seen = labelled();
         for (const row of rows) {
-          if (!seen.has(`${row.kalshi_id}|${row.poly_url}`)) App.labels.push(row);
+          if (!seen.has(row.key)) App.labels.push(row);
         }
         App.saveLabels();
         App.renderLabels();

@@ -20,12 +20,14 @@ def pair(key="K1", edge=0.03, cost=0.95, days=10, conf=0.8, rules=0.6,
     """A scanner-shaped record. Same contract test_allocator.py encodes."""
     return {
         "edge": edge, "cost_per_contract": cost, "days_to_settle": days,
-        "edge_leg": "kalshi yes / poly no", "confidence": conf,
+        "edge_leg": "buy YES kalshi / NO polymarket", "confidence": conf,
         "rules_similarity": rules, "warnings": warnings or [],
         "priced_at_top_of_book": False,
-        "kalshi": {"id": key, "question": f"will {key} happen", "settle_time": settle},
-        "polymarket": {"url": f"https://poly/{key}", "question": f"{key}?",
-                       "settle_time": settle},
+        "a": {"venue": "kalshi", "id": key, "question": f"will {key} happen",
+              "url": f"https://kalshi.com/markets/{key}", "settle_time": settle},
+        "b": {"venue": "polymarket", "id": f"poly-{key}",
+              "url": f"https://poly/{key}", "question": f"{key}?",
+              "settle_time": settle},
     }
 
 

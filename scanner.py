@@ -70,6 +70,7 @@ CONFIG = {
 KALSHI_API = "https://api.elections.kalshi.com/trade-api/v2"
 POLY_GAMMA_API = "https://gamma-api.polymarket.com"
 POLY_CLOB_API = "https://clob.polymarket.com"
+PREDICTIT_API = "https://www.predictit.org/api/marketdata/all/"
 USER_AGENT = "market-arb-scanner/2.0 (public market data reader)"
 
 # Gamma silently caps `limit` at 100. Requesting more returns 100 rows, which
@@ -110,6 +111,34 @@ POLY_FEE_BY_CATEGORY = {
     "world events": 0.0,
 }
 POLY_FEE_DEFAULT = 0.05
+
+# PredictIt charges no per-trade entry fee. Its 10% cut on net profit and 5% on
+# withdrawals fall outside this per-contract bell-curve model, so a coefficient
+# of zero is right for entry -- pairs that touch PredictIt carry a warning about
+# those fees instead, so a shown edge is never mistaken for the realised one.
+PREDICTIT_FEE_DEFAULT = 0.0
+
+
+# The venues this scanner compares, in a fixed priority order. Every result pair
+# stores its two sides canonically ordered by this rank (ties broken by market
+# id), so side A and side B are assigned the same way regardless of which side
+# happened to match which. The dashboard, the judge and the pair-identity key
+# all lean on that determinism.
+VENUE_ORDER = ("kalshi", "polymarket", "predictit")
+
+
+def venue_rank(venue: str) -> int:
+    try:
+        return VENUE_ORDER.index(venue)
+    except ValueError:
+        return len(VENUE_ORDER)
+
+
+def canonical_sides(m, n):
+    """Order two markets so side A is the earlier-ranked venue (id breaks ties)."""
+    if (venue_rank(m.venue), m.market_id) <= (venue_rank(n.venue), n.market_id):
+        return m, n
+    return n, m
 
 
 # Counters the pipeline fills in as it runs, so the same numbers that go to
@@ -378,6 +407,8 @@ class Market:
             return overrides[self.venue]
         if self.venue == "kalshi":
             return KALSHI_FEE_DEFAULT
+        if self.venue == "predictit":
+            return PREDICTIT_FEE_DEFAULT
         return POLY_FEE_BY_CATEGORY.get(self.category.lower(), POLY_FEE_DEFAULT)
 
 
@@ -798,6 +829,98 @@ def polymarket_to_market(row: dict, reject: Counter) -> Market | None:
     )
 
 
+def fetch_predictit(verbose: bool = False) -> list[dict]:
+    """Flatten PredictIt's markets-of-contracts feed into one row per contract.
+
+    PredictIt returns ~35-40 markets, each holding one or more YES/NO contracts
+    (a 'who wins' market carries one contract per candidate). The scanner works
+    in binary contracts, so each contract becomes its own row, tagged with its
+    parent market's name, url and id so siblings can be grouped as a ladder.
+    """
+    payload = http_get_json(PREDICTIT_API, retries=5)
+    markets = (payload or {}).get("markets") or []
+    rows = predictit_flatten(markets)
+    if verbose:
+        print(f"  predictit: {len(rows)} contracts across {len(markets)} markets",
+              file=sys.stderr)
+    return rows
+
+
+def predictit_flatten(markets: list[dict]) -> list[dict]:
+    """One row per contract, tagged with its parent market. Shared by the live
+    fetch and the offline fixture path so both feed row_to_market the same shape.
+    """
+    rows: list[dict] = []
+    for market in markets:
+        contracts = market.get("contracts") or []
+        for contract in contracts:
+            rows.append({
+                "market_id": market.get("id"),
+                "market_name": market.get("name") or market.get("shortName") or "",
+                "market_url": market.get("url") or "",
+                "contract": contract,
+                "multi": len(contracts) > 1,
+            })
+    return rows
+
+
+def predictit_price(value) -> float | None:
+    """PredictIt quotes YES/NO costs in dollars, 0.01-0.99 (null with no quote).
+
+    The `> 1` guard defensively rescales a cents-denominated value, so the
+    parser is right whether the feed sends 0.42 or 42 for a 42-cent contract.
+    """
+    if value is None:
+        return None
+    try:
+        price = float(value)
+    except (TypeError, ValueError):
+        return None
+    if price > 1.0:
+        price /= 100.0
+    return price if 0.0 < price < 1.0 else None
+
+
+def predictit_to_market(row: dict, reject: Counter) -> Market | None:
+    contract = row.get("contract") or {}
+    if (contract.get("status") or "Open").lower() != "open":
+        reject["predictit: contract not open"] += 1
+        return None
+
+    yes_ask = predictit_price(contract.get("bestBuyYesCost"))
+    no_ask = predictit_price(contract.get("bestBuyNoCost"))
+    yes_bid = predictit_price(contract.get("bestSellYesCost"))
+    no_bid = predictit_price(contract.get("bestSellNoCost"))
+    last = predictit_price(contract.get("lastTradePrice"))
+    if all(v is None for v in (yes_ask, no_ask, yes_bid, no_bid, last)):
+        reject["predictit: no live quote"] += 1
+        return None
+
+    market_name = (row.get("market_name") or "").strip()
+    contract_name = (contract.get("name") or "").strip()
+    if row.get("multi") and contract_name and contract_name.lower() not in market_name.lower():
+        question = f"{market_name} — {contract_name}"
+    else:
+        question = market_name or contract_name
+
+    settle = parse_time(contract.get("dateEnd"))
+    return Market(
+        venue="predictit",
+        market_id=f"{row.get('market_id')}-{contract.get('id')}",
+        question=question,
+        rules="",                       # the /all/ feed exposes no rule text
+        url=row.get("market_url") or "https://www.predictit.org",
+        category="politics",
+        yes_bid=yes_bid, yes_ask=yes_ask, no_bid=no_bid, no_ask=no_ask,
+        last=last,
+        volume=0.0,                     # no per-contract volume in this feed
+        liquidity=0.0,
+        close_time=settle,
+        settle_time=settle,
+        group_key=str(row.get("market_id") or ""),   # siblings share the market
+    )
+
+
 # ---------------------------------------------------------------------------
 # Order books
 # ---------------------------------------------------------------------------
@@ -886,8 +1009,8 @@ def fetch_books(markets: list[Market], verbose: bool) -> int:
 
 @dataclass
 class Pair:
-    kalshi: Market
-    poly: Market
+    a: Market                    # the earlier-ranked venue; see canonical_sides
+    b: Market
     title_sim: float
     rules_sim: float
     date_sim: float
@@ -898,8 +1021,8 @@ class Pair:
     polarity_suspect: bool = False
     rules_known: bool = True
 
-    mid_kalshi: float | None = None
-    mid_poly: float | None = None
+    mid_a: float | None = None
+    mid_b: float | None = None
     mid_gap: float = 0.0
 
     edge: float = 0.0            # per contract, after fees, at requested size
@@ -1013,8 +1136,11 @@ def score_pair(k: Market, p: Market, weights: tuple[float, float, float]) -> Pai
     if days_apart is not None and days_apart > 30:
         warnings.append(f"settlement dates {days_apart:.0f} days apart")
 
+    # Scoring is symmetric in k and p, so the sides can be stored in canonical
+    # venue order without changing the confidence.
+    side_a, side_b = canonical_sides(k, p)
     return Pair(
-        kalshi=k, poly=p,
+        a=side_a, b=side_b,
         title_sim=title_sim, rules_sim=rules_sim, date_sim=date_sim,
         penalty=penalty, confidence=max(0.0, min(1.0, base - penalty)),
         days_apart=days_apart, warnings=warnings, polarity_suspect=polarity_suspect,
@@ -1022,38 +1148,41 @@ def score_pair(k: Market, p: Market, weights: tuple[float, float, float]) -> Pai
     )
 
 
-def candidate_pairs(kalshi: list[Market], poly: list[Market], idf: dict[str, float],
-                    max_candidates: int, common_frac: float) -> dict[int, set[int]]:
-    """Inverted index over question tokens, ranked by IDF weight.
+def candidate_pairs(markets: list[Market], idf: dict[str, float],
+                    max_candidates: int, common_frac: float) -> set[tuple[int, int]]:
+    """Inverted index over question tokens, ranked by IDF weight, across every
+    venue at once. Returns each cross-venue pair of market indices once, as an
+    ordered (lo, hi) tuple -- a venue never arbitrages itself, and scoring is
+    symmetric, so the two endpoints of a pair are interchangeable here.
 
-    The previous version hard-dropped any token appearing in more than 5% of
-    Polymarket questions. In politics that discards 'trump', 'senate', 'fed' --
-    exactly the tokens that identify a market -- and leaves the highest-volume
-    contracts with no candidates at all. IDF already down-weights common terms,
-    so the cutoff only needs to catch pathological tokens.
+    The cutoff only catches pathological tokens: IDF already down-weights common
+    terms, and hard-dropping 'trump', 'senate', 'fed' would leave the busiest
+    political contracts with no candidates at all.
     """
     index: dict[str, list[int]] = defaultdict(list)
-    for i, market in enumerate(poly):
+    for i, market in enumerate(markets):
         for token in set(market.tokens):
             index[token].append(i)
 
-    doc_count = max(len(poly), 1)
+    doc_count = max(len(markets), 1)
     ceiling = max(200, common_frac * doc_count)
     common = {t for t, ids in index.items() if len(ids) > ceiling}
 
-    out: dict[int, set[int]] = {}
-    for ki, market in enumerate(kalshi):
+    out: set[tuple[int, int]] = set()
+    for i, market in enumerate(markets):
         scores: dict[int, float] = defaultdict(float)
         for token in set(market.tokens):
             if token in common:
                 continue
             weight = idf.get(token, 1.0)
-            for pi in index.get(token, ()):
-                scores[pi] += weight
+            for j in index.get(token, ()):
+                if markets[j].venue != market.venue:
+                    scores[j] += weight
         if not scores:
             continue
         ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:max_candidates]
-        out[ki] = {pi for pi, _ in ranked}
+        for j, _ in ranked:
+            out.add((i, j) if i < j else (j, i))
     return out
 
 
@@ -1071,10 +1200,13 @@ def mark_ladders(markets: list[Market]) -> int:
     share. Requiring at least one of them to appear on the other side is a
     structural fix that no amount of threshold tuning would achieve.
     """
-    groups: dict[str, list[Market]] = defaultdict(list)
+    # Kalshi splits by event_ticker; PredictIt splits a "who wins" market into
+    # one contract per candidate. Both populate group_key, so group by
+    # (venue, group_key) to keep two venues' groups from colliding.
+    groups: dict[tuple, list[Market]] = defaultdict(list)
     for market in markets:
-        if market.venue == "kalshi" and market.group_key:
-            groups[market.group_key].append(market)
+        if market.group_key:
+            groups[(market.venue, market.group_key)].append(market)
 
     flagged = 0
     for members in groups.values():
@@ -1088,11 +1220,16 @@ def mark_ladders(markets: list[Market]) -> int:
     return flagged
 
 
-def ladder_mismatch(k: Market, p: Market) -> bool:
-    """True if k is a ladder member whose distinguishing tokens are absent."""
-    if k.ladder_size < 2 or not k.distinguishing:
+def ladder_mismatch(m: Market, n: Market) -> bool:
+    """True if either side is a ladder member whose distinguishing tokens are
+    absent from the other -- a one-of-N contract matched to an unrelated one."""
+    return _ladder_gap(m, n) or _ladder_gap(n, m)
+
+
+def _ladder_gap(member: Market, other: Market) -> bool:
+    if member.ladder_size < 2 or not member.distinguishing:
         return False
-    return not (k.distinguishing & set(p.tokens))
+    return not (member.distinguishing & set(other.tokens))
 
 
 # ---------------------------------------------------------------------------
@@ -1163,7 +1300,7 @@ def passes_gates(confidence: float, rules_sim: float | None, edge: float,
 
 def price_pair(pair: Pair, contracts: float, overrides: dict[str, float],
                max_plausible: float = 1.0) -> None:
-    k, p = pair.kalshi, pair.poly
+    k, p = pair.a, pair.b
 
     # Reset before repricing. Pairs are priced twice -- once on top of book to
     # build the shortlist, then again after real books arrive. Without this,
@@ -1178,9 +1315,9 @@ def price_pair(pair: Pair, contracts: float, overrides: dict[str, float],
     pair.edge_leg = ""
     pair.implausible = False
     pair.warnings = [w for w in pair.warnings if IMPLAUSIBLE_MARK not in w]
-    pair.mid_kalshi, pair.mid_poly = k.mid, p.mid
-    if pair.mid_kalshi is not None and pair.mid_poly is not None:
-        pair.mid_gap = pair.mid_kalshi - pair.mid_poly
+    pair.mid_a, pair.mid_b = k.mid, p.mid
+    if pair.mid_a is not None and pair.mid_b is not None:
+        pair.mid_gap = pair.mid_a - pair.mid_b
     pair.priced_at_top = k.book is None or p.book is None
 
     horizon = max([t for t in (k.horizon(), p.horizon()) if t is not None], default=None)
@@ -1194,8 +1331,8 @@ def price_pair(pair: Pair, contracts: float, overrides: dict[str, float],
 
     best = None
     for buy, buy_side, other, other_side, label in (
-        (k, "yes", p, "no", "buy YES kalshi / NO polymarket"),
-        (p, "yes", k, "no", "buy YES polymarket / NO kalshi"),
+        (k, "yes", p, "no", f"buy YES {k.venue} / NO {p.venue}"),
+        (p, "yes", k, "no", f"buy YES {p.venue} / NO {k.venue}"),
     ):
         result = _leg_cost(buy, buy_side, other, other_side, contracts, overrides)
         if result is None:
@@ -1212,6 +1349,13 @@ def price_pair(pair: Pair, contracts: float, overrides: dict[str, float],
     cost, label, filled = best
     pair.cost, pair.edge_leg, pair.filled = cost, label, filled
     pair.edge = 1.0 - cost
+
+    # PredictIt's fees are levied on profit and withdrawal, not entry, so they
+    # are absent from `cost` above. Flag it so a shown edge is not read as the
+    # realised one on a leg that will surrender 10% of gains plus 5% to cash out.
+    if k.venue == "predictit" or p.venue == "predictit":
+        pair.warnings.append("PredictIt takes 10% of net profit and 5% on "
+                             "withdrawal -- realised edge is below the figure shown")
 
     # Capital is fully collateralised on both legs until settlement, with no
     # cross-margining. A 0.5pp edge over six days and one over four hundred
@@ -1279,37 +1423,80 @@ def write_cache(path: str, payload) -> None:
         pass
 
 
-def load_raw(args) -> tuple[list[dict], list[dict]]:
+OFFLINE_FILES = {"kalshi": "kalshi.json", "polymarket": "polymarket.json",
+                 "predictit": "predictit.json"}
+
+
+def _read_offline(offline_dir: str, name: str):
+    path = os.path.join(offline_dir, name)
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    return data.get("markets", data) if isinstance(data, dict) else data
+
+
+def _cached_fetch(args, venue: str, fetcher) -> list[dict]:
+    path = cache_key(args, venue)
+    raw = read_cache(path, args.cache_ttl)
+    if raw is None:
+        print(f"fetching {venue}...", file=sys.stderr)
+        raw = fetcher()
+        write_cache(path, raw)
+    else:
+        print(f"{venue}: {len(raw)} markets from cache", file=sys.stderr)
+    return raw
+
+
+def load_raw(args) -> dict[str, list[dict]]:
+    """Raw rows keyed by venue. A venue with no fixture (offline) or that a flag
+    disables is simply absent; the scan compares whatever venues are present."""
     if args.offline:
-        def read(name):
-            with open(os.path.join(args.offline, name), encoding="utf-8") as fh:
-                data = json.load(fh)
-            return data.get("markets", data) if isinstance(data, dict) else data
-        return read("kalshi.json"), read("polymarket.json")
+        out = {}
+        for venue, fname in OFFLINE_FILES.items():
+            rows = _read_offline(args.offline, fname)
+            if rows is None:
+                continue
+            # The PredictIt fixture is the raw markets-of-contracts API shape;
+            # flatten it here so offline and live feed row_to_market alike.
+            out[venue] = predictit_flatten(rows) if venue == "predictit" else rows
+        return out
 
     os.makedirs(args.cache_dir, exist_ok=True)
+    out: dict[str, list[dict]] = {}
+    out["kalshi"] = _cached_fetch(args, "kalshi", lambda: fetch_kalshi(
+        args.max_markets, args.max_days_out, args.kalshi_scan_limit,
+        args.kalshi_series, args.verbose))
+    out["polymarket"] = _cached_fetch(args, "polymarket", lambda: fetch_polymarket(
+        args.max_markets, args.min_volume_poly, args.max_days_out, args.verbose))
+    if not getattr(args, "no_predictit", False):
+        # PredictIt is best-effort: a smaller, sometimes-flaky venue must not be
+        # able to sink a scan that Kalshi and Polymarket would have carried.
+        try:
+            out["predictit"] = _cached_fetch(args, "predictit",
+                                             lambda: fetch_predictit(args.verbose))
+        except FetchError as exc:
+            print(f"predictit: skipped ({exc})", file=sys.stderr)
+    return out
 
-    kalshi_path = cache_key(args, "kalshi")
-    kalshi_raw = read_cache(kalshi_path, args.cache_ttl)
-    if kalshi_raw is None:
-        print("fetching kalshi...", file=sys.stderr)
-        kalshi_raw = fetch_kalshi(args.max_markets, args.max_days_out,
-                                  args.kalshi_scan_limit, args.kalshi_series, args.verbose)
-        write_cache(kalshi_path, kalshi_raw)
-    else:
-        print(f"kalshi: {len(kalshi_raw)} markets from cache", file=sys.stderr)
 
-    poly_path = cache_key(args, "polymarket")
-    poly_raw = read_cache(poly_path, args.cache_ttl)
-    if poly_raw is None:
-        print("fetching polymarket...", file=sys.stderr)
-        poly_raw = fetch_polymarket(args.max_markets, args.min_volume_poly,
-                                    args.max_days_out, args.verbose)
-        write_cache(poly_path, poly_raw)
-    else:
-        print(f"polymarket: {len(poly_raw)} markets from cache", file=sys.stderr)
+def row_to_market(venue: str, row: dict, reject: Counter) -> Market | None:
+    """Turn one raw row into a Market, dispatched by venue."""
+    if venue == "kalshi":
+        return kalshi_to_market(row)
+    if venue == "polymarket":
+        return polymarket_to_market(row, reject)
+    if venue == "predictit":
+        return predictit_to_market(row, reject)
+    return None
 
-    return kalshi_raw, poly_raw
+
+def min_volume_for(args, venue: str) -> float:
+    return {
+        "kalshi": args.min_volume_kalshi,
+        "polymarket": args.min_volume_poly,
+        "predictit": getattr(args, "min_volume_predictit", 0.0),
+    }.get(venue, 0.0)
 
 
 def apply_filters(markets: list[Market], min_volume: float, horizon_days: int,
@@ -1390,10 +1577,11 @@ def diagnose_quotes(rows: list[dict], tag: str) -> None:
                   file=sys.stderr)
 
 
-def report_attrition(reject: Counter, kalshi_raw: int, poly_raw: int,
-                     kalshi_kept: int, poly_kept: int) -> None:
-    print(f"kalshi     {kalshi_raw:>6} fetched -> {kalshi_kept:>5} usable", file=sys.stderr)
-    print(f"polymarket {poly_raw:>6} fetched -> {poly_kept:>5} usable", file=sys.stderr)
+def report_attrition(reject: Counter, raw_by_venue: dict[str, list],
+                     usable_by_venue: dict[str, int]) -> None:
+    for venue, rows in raw_by_venue.items():
+        print(f"{venue:<11}{len(rows):>6} fetched -> {usable_by_venue.get(venue, 0):>5} usable",
+              file=sys.stderr)
     if reject:
         print("dropped:", file=sys.stderr)
         for reason, count in reject.most_common():
@@ -1404,80 +1592,94 @@ def scan(args) -> tuple[list[Pair], Counter]:
     reject: Counter = Counter()
     RUN_STATS.clear()
     RUN_STATS["started_at"] = time.time()
-    kalshi_raw, poly_raw = load_raw(args)
+    raw_by_venue = load_raw(args)
 
-    kalshi = [kalshi_to_market(r) for r in kalshi_raw]
-    poly = [m for m in (polymarket_to_market(r, reject) for r in poly_raw) if m is not None]
+    # One pool of markets across every venue, each tagged with its own .venue.
+    markets: list[Market] = []
+    usable_by_venue: dict[str, int] = {}
+    for venue, rows in raw_by_venue.items():
+        built = [m for m in (row_to_market(venue, r, reject) for r in rows)
+                 if m is not None]
+        kept = apply_filters(built, min_volume_for(args, venue),
+                             args.max_days_out, reject, venue)
+        usable_by_venue[venue] = len(kept)
+        RUN_STATS[f"{venue}_fetched"] = len(rows)
+        RUN_STATS[f"{venue}_usable"] = len(kept)
+        if not kept:
+            diagnose_quotes(rows, venue)
+        markets.extend(kept)
 
-    kalshi = apply_filters(kalshi, args.min_volume_kalshi, args.max_days_out, reject, "kalshi")
-    poly = apply_filters(poly, args.min_volume_poly, args.max_days_out, reject, "poly")
+    report_attrition(reject, raw_by_venue, usable_by_venue)
 
-    report_attrition(reject, len(kalshi_raw), len(poly_raw), len(kalshi), len(poly))
-    RUN_STATS.update(kalshi_fetched=len(kalshi_raw), poly_fetched=len(poly_raw),
-                     kalshi_usable=len(kalshi), poly_usable=len(poly))
-    if not kalshi:
-        diagnose_quotes(kalshi_raw, "kalshi")
-    if not poly:
-        diagnose_quotes(poly_raw, "polymarket")
-    if not kalshi or not poly:
+    # A comparison needs at least two venues carrying something usable.
+    if len({m.venue for m in markets}) < 2:
         return [], reject
 
-    for market in kalshi + poly:
+    for market in markets:
         market.prepare()
 
-    idf = build_idf([m.tokens for m in kalshi + poly])
-    rules_idf = build_idf([m.rule_tokens for m in kalshi + poly if m.rule_tokens])
-    for market in kalshi + poly:
+    idf = build_idf([m.tokens for m in markets])
+    rules_idf = build_idf([m.rule_tokens for m in markets if m.rule_tokens])
+    for market in markets:
         market.vector = tfidf_vector(market.tokens, idf)
         market.rule_vector = tfidf_vector(market.rule_tokens, rules_idf)
 
-    ladder_members = mark_ladders(kalshi)
+    ladder_members = mark_ladders(markets)
     RUN_STATS["ladder_members"] = ladder_members
     if ladder_members:
-        print(f"flagged {ladder_members} kalshi markets as one-of-N ladder members",
+        print(f"flagged {ladder_members} markets as one-of-N ladder members",
               file=sys.stderr)
 
     weights = (args.weight_title, args.weight_rules, args.weight_date)
-    candidates = candidate_pairs(kalshi, poly, idf, args.max_candidates, args.common_token_frac)
+    candidates = candidate_pairs(markets, idf, args.max_candidates, args.common_token_frac)
 
-    total = sum(len(v) for v in candidates.values())
+    total = len(candidates)
     print(f"scoring {total:,} candidate pairs...", file=sys.stderr)
 
-    best_by_kalshi: dict[int, Pair] = {}
+    # Each market keeps its single best cross-venue counterpart. A pair is held
+    # by both of its endpoints, so it is deduped by identity before returning.
+    best_for: dict[int, Pair] = {}
     scored = skipped = skipped_ladder = 0
     started = time.time()
-    for ki, poly_indices in candidates.items():
-        for pi in poly_indices:
-            scored += 1
-            if scored % 25_000 == 0:
-                rate = scored / max(time.time() - started, 1e-6)
-                remaining = (total - scored) / rate
-                print(f"  {scored:,}/{total:,} ({100*scored/total:.0f}%) "
-                      f"~{remaining:.0f}s left", file=sys.stderr)
-            # Skip pairs whose ceiling cannot reach the threshold, before
-            # paying for the character ratio.
-            if best_possible(kalshi[ki], poly[pi], weights) < args.min_confidence:
-                skipped += 1
-                continue
-            if not args.no_ladder_filter and ladder_mismatch(kalshi[ki], poly[pi]):
-                skipped_ladder += 1
-                continue
-            pair = score_pair(kalshi[ki], poly[pi], weights)
-            # Edge is not known yet at this stage, so pass 0 for it; the
-            # implausible-edge gate is applied after pricing.
-            ok, _ = passes_gates(pair.confidence,
-                                 pair.rules_sim if pair.rules_known else None, 0.0,
-                                 args.min_confidence, args.min_rules_sim,
-                                 args.max_plausible_edge)
-            if not ok:
-                continue
-            if pair.days_apart is not None and pair.days_apart > args.max_date_diff:
-                continue
-            current = best_by_kalshi.get(ki)
+    for i, j in candidates:
+        scored += 1
+        if scored % 25_000 == 0:
+            rate = scored / max(time.time() - started, 1e-6)
+            remaining = (total - scored) / rate
+            print(f"  {scored:,}/{total:,} ({100*scored/total:.0f}%) "
+                  f"~{remaining:.0f}s left", file=sys.stderr)
+        m, n = markets[i], markets[j]
+        # Skip pairs whose ceiling cannot reach the threshold, before paying
+        # for the character ratio.
+        if best_possible(m, n, weights) < args.min_confidence:
+            skipped += 1
+            continue
+        if not args.no_ladder_filter and ladder_mismatch(m, n):
+            skipped_ladder += 1
+            continue
+        pair = score_pair(m, n, weights)
+        # Edge is not known yet at this stage, so pass 0 for it; the
+        # implausible-edge gate is applied after pricing.
+        ok, _ = passes_gates(pair.confidence,
+                             pair.rules_sim if pair.rules_known else None, 0.0,
+                             args.min_confidence, args.min_rules_sim,
+                             args.max_plausible_edge)
+        if not ok:
+            continue
+        if pair.days_apart is not None and pair.days_apart > args.max_date_diff:
+            continue
+        for idx in (i, j):
+            current = best_for.get(idx)
             if current is None or pair.confidence > current.confidence:
-                best_by_kalshi[ki] = pair
+                best_for[idx] = pair
 
-    pairs = list(best_by_kalshi.values())
+    seen: set[tuple] = set()
+    pairs: list[Pair] = []
+    for pair in best_for.values():
+        key = (pair.a.venue, pair.a.market_id, pair.b.venue, pair.b.market_id)
+        if key not in seen:
+            seen.add(key)
+            pairs.append(pair)
     print(f"scored {scored:,} pairs in {time.time() - started:.1f}s "
           f"({skipped:,} skipped by prefilter, {skipped_ladder:,} by ladder rule), "
           f"{len(pairs)} above confidence "
@@ -1491,6 +1693,8 @@ def scan(args) -> tuple[list[Pair], Counter]:
         overrides["kalshi"] = args.kalshi_fee_coeff
     if args.poly_fee_coeff is not None:
         overrides["polymarket"] = args.poly_fee_coeff
+    if getattr(args, "predictit_fee_coeff", None) is not None:
+        overrides["predictit"] = args.predictit_fee_coeff
 
     # Two-stage pricing: screen everything on top-of-book, then spend the
     # request budget fetching real depth only for the pairs that survive.
@@ -1509,7 +1713,7 @@ def scan(args) -> tuple[list[Pair], Counter]:
         RUN_STATS["depth_priced"] = len(shortlist)
         if shortlist:
             print(f"fetching order books for top {len(shortlist)} pairs...", file=sys.stderr)
-            fetch_books([p.kalshi for p in shortlist] + [p.poly for p in shortlist],
+            fetch_books([p.a for p in shortlist] + [p.b for p in shortlist],
                         args.verbose)
             for pair in shortlist:
                 price_pair(pair, args.size, overrides, args.max_plausible_edge)
@@ -1577,16 +1781,12 @@ def render(pairs: list[Pair], args) -> str:
         if p.annualised is not None and p.days_to_settle:
             lines.append(f"    {p.annualised * 100:+.1f}% annualised over "
                          f"{p.days_to_settle:.0f} days of locked capital")
-        lines.append(f"    kalshi     {pct(p.mid_kalshi)}%  "
-                     f"[bid {pct(p.kalshi.yes_bid)} / ask {pct(p.kalshi.yes_ask)}]  "
-                     f"vol {p.kalshi.volume:,.0f}")
-        lines.append(f"      {shorten(p.kalshi.question, 88)}")
-        lines.append(f"      {p.kalshi.market_id}  {p.kalshi.url}")
-        lines.append(f"    polymarket {pct(p.mid_poly)}%  "
-                     f"[bid {pct(p.poly.yes_bid)} / ask {pct(p.poly.yes_ask)}]  "
-                     f"vol {p.poly.volume:,.0f}")
-        lines.append(f"      {shorten(p.poly.question, 88)}")
-        lines.append(f"      {p.poly.url}")
+        for market, mid in ((p.a, p.mid_a), (p.b, p.mid_b)):
+            lines.append(f"    {market.venue:<10} {pct(mid)}%  "
+                         f"[bid {pct(market.yes_bid)} / ask {pct(market.yes_ask)}]  "
+                         f"vol {market.volume:,.0f}")
+            lines.append(f"      {shorten(market.question, 88)}")
+            lines.append(f"      {market.market_id}  {market.url}")
         lines.append(f"    similarity: title {p.title_sim:.2f}  "
                      f"rules {fmt2(p.rules_sim if p.rules_known else None)}  "
                      f"dates {p.date_sim:.2f}"
@@ -1601,9 +1801,11 @@ def render(pairs: list[Pair], args) -> str:
                          "against real depth")
         for warning in p.warnings:
             lines.append(f"    ! {warning}")
-        if args.verbose and p.kalshi.rules:
-            lines.append(f"    kalshi rules: {shorten(p.kalshi.rules, 300)}")
-            lines.append(f"    poly rules:   {shorten(p.poly.rules, 300)}")
+        if args.verbose:
+            if p.a.rules:
+                lines.append(f"    {p.a.venue} rules: {shorten(p.a.rules, 300)}")
+            if p.b.rules:
+                lines.append(f"    {p.b.venue} rules: {shorten(p.b.rules, 300)}")
     lines += [
         "",
         "Confidence is a text-similarity estimate. It is not evidence that the two",
@@ -1642,16 +1844,19 @@ def pair_to_dict(p: Pair) -> dict:
         "annualised": p.annualised,
         "priced_at_top_of_book": p.priced_at_top,
         "warnings": p.warnings,
-        "kalshi": side(p.kalshi),
-        "polymarket": side(p.poly),
+        # Generic sides: `a` is the earlier-ranked venue, `b` the other. Each
+        # carries its own `venue`, so a pair can be any two venues, not just
+        # Kalshi and Polymarket.
+        "a": side(p.a),
+        "b": side(p.b),
     }
 
 
 def write_csv(path: str, pairs: list[Pair]) -> None:
     columns = ["confidence", "mid_gap", "edge", "annualised", "days_to_settle",
                "edge_leg", "cost_per_contract", "priced_at_top_of_book",
-               "kalshi_mid", "poly_mid", "kalshi_question", "poly_question",
-               "kalshi_id", "poly_url", "title_similarity", "rules_similarity",
+               "a_venue", "a_mid", "b_venue", "b_mid", "a_question", "b_question",
+               "a_id", "b_url", "title_similarity", "rules_similarity",
                "days_apart", "warnings"]
     with open(path, "w", newline="", encoding="utf-8-sig") as fh:
         writer = csv.writer(fh)
@@ -1663,8 +1868,8 @@ def write_csv(path: str, pairs: list[Pair]) -> None:
                 "" if p.days_to_settle is None else f"{p.days_to_settle:.1f}",
                 p.edge_leg, "" if p.cost is None else f"{p.cost:.4f}",
                 p.priced_at_top,
-                p.mid_kalshi, p.mid_poly, p.kalshi.question, p.poly.question,
-                p.kalshi.market_id, p.poly.url,
+                p.a.venue, p.mid_a, p.b.venue, p.mid_b,
+                p.a.question, p.b.question, p.a.market_id, p.b.url,
                 f"{p.title_sim:.4f}",
                 "" if not p.rules_known else f"{p.rules_sim:.4f}",
                 "" if p.days_apart is None else f"{p.days_apart:.1f}",
@@ -1700,6 +1905,7 @@ def run_meta(pairs: list[Pair], reject: Counter, args, error: str = "") -> dict:
             "max_days_out": args.max_days_out,
             "min_volume_kalshi": args.min_volume_kalshi,
             "min_volume_poly": args.min_volume_poly,
+            "min_volume_predictit": getattr(args, "min_volume_predictit", 0.0),
         },
         "weights": {
             "title": args.weight_title,
@@ -1712,6 +1918,9 @@ def run_meta(pairs: list[Pair], reject: Counter, args, error: str = "") -> dict:
             "polymarket_default": args.poly_fee_coeff if args.poly_fee_coeff is not None
                                   else POLY_FEE_DEFAULT,
             "polymarket_by_category": POLY_FEE_BY_CATEGORY,
+            "predictit": getattr(args, "predictit_fee_coeff", None)
+                         if getattr(args, "predictit_fee_coeff", None) is not None
+                         else PREDICTIT_FEE_DEFAULT,
         },
         "funnel": {k: v for k, v in RUN_STATS.items() if k != "started_at"},
         "dropped": dict(reject.most_common()),
@@ -1734,10 +1943,10 @@ def slim_record(record: dict) -> dict:
     that grows a megabyte a week.
     """
     slim = dict(record)
-    for venue in ("kalshi", "polymarket"):
-        side = dict(slim.get(venue) or {})
+    for side_key in ("a", "b"):
+        side = dict(slim.get(side_key) or {})
         side.pop("rules", None)
-        slim[venue] = side
+        slim[side_key] = side
     return slim
 
 
@@ -1840,9 +2049,13 @@ SEED_LABELS = [
 
 
 def seed_rows() -> list[dict]:
-    return [{"kalshi_id": kid, "poly_url": f"https://polymarket.com/market/{slug}",
-             "kalshi_question": kq, "poly_question": pq, "confidence": conf,
-             "rules_sim": rules, "edge": edge, "label": label, "note": why}
+    # The seed set predates other venues, so every side A is Kalshi and side B
+    # Polymarket -- which is also their canonical order (kalshi ranks first).
+    return [{"a_venue": "kalshi", "a_id": kid, "a_question": kq,
+             "b_venue": "polymarket", "b_id": slug, "b_question": pq,
+             "key": pair_identity("kalshi", kid, "polymarket", slug),
+             "confidence": conf, "rules_sim": rules, "edge": edge,
+             "label": label, "note": why}
             for kid, slug, kq, pq, conf, rules, edge, label, why in SEED_LABELS]
 
 
@@ -1864,8 +2077,18 @@ def save_labels(rows: list[dict]) -> None:
         json.dump(rows, fh, indent=2, ensure_ascii=False)
 
 
+def pair_identity(a_venue: str, a_id: str, b_venue: str, b_id: str) -> str:
+    """The one pair-identity string the whole system joins on: labels, the LLM
+    verdicts merged in app.py, and the dashboard's pairKey all build it this way,
+    from the two sides in canonical (side A, side B) order."""
+    return f"{a_venue}:{a_id}|{b_venue}:{b_id}"
+
+
 def label_key(row: dict) -> str:
-    return f"{row.get('kalshi_id', '')}|{row.get('poly_url', '')}"
+    if row.get("key"):
+        return row["key"]
+    return pair_identity(row.get("a_venue", ""), row.get("a_id", ""),
+                         row.get("b_venue", ""), row.get("b_id", ""))
 
 
 def review(args) -> int:
@@ -1884,7 +2107,8 @@ def review(args) -> int:
     rows = load_labels()
     known = {label_key(r) for r in rows}
     todo = [pair for pair in run
-            if f"{pair['kalshi']['id']}|{pair['polymarket']['url']}" not in known]
+            if pair_identity(pair["a"]["venue"], pair["a"]["id"],
+                             pair["b"]["venue"], pair["b"]["id"]) not in known]
 
     if not todo:
         print(f"every pair in the last scan is already labelled "
@@ -1897,15 +2121,15 @@ def review(args) -> int:
     print("  m = match     x = mismatch     s = skip     q = save and quit\n")
 
     for i, pair in enumerate(todo, 1):
-        k, p = pair["kalshi"], pair["polymarket"]
+        a, b = pair["a"], pair["b"]
         print("=" * 72)
         print(f"[{i}/{len(todo)}]  confidence {pair['confidence']:.2f}   "
               f"rules {fmt2(pair['rules_similarity'])}   "
               f"edge {pair['edge'] * 100:+.2f}pp")
-        print(f"  KALSHI      {k['question']}")
-        print(f"              {k['url']}")
-        print(f"  POLYMARKET  {p['question']}")
-        print(f"              {p['url']}")
+        print(f"  {a['venue'].upper():<11} {a['question']}")
+        print(f"              {a['url']}")
+        print(f"  {b['venue'].upper():<11} {b['question']}")
+        print(f"              {b['url']}")
         for warning in pair.get("warnings", []):
             print(f"  ! {warning}")
 
@@ -1920,10 +2144,9 @@ def review(args) -> int:
             continue
 
         rows.append({
-            "kalshi_id": k["id"],
-            "poly_url": p["url"],
-            "kalshi_question": k["question"],
-            "poly_question": p["question"],
+            "a_venue": a["venue"], "a_id": a["id"], "a_question": a["question"],
+            "b_venue": b["venue"], "b_id": b["id"], "b_question": b["question"],
+            "key": pair_identity(a["venue"], a["id"], b["venue"], b["id"]),
             "confidence": pair["confidence"],
             "rules_sim": pair["rules_similarity"],
             "edge": pair["edge"],
@@ -1980,15 +2203,15 @@ def score(args) -> int:
         for row in misses:
             print(f"  [{row['reason']}] conf {row['confidence']:.2f} "
                   f"rules {fmt2(row.get('rules_sim'))} edge {row['edge'] * 100:+.1f}pp")
-            print(f"      K: {row['kalshi_question'][:74]}")
-            print(f"      P: {row['poly_question'][:74]}")
+            print(f"      A: {row.get('a_question', '')[:74]}")
+            print(f"      B: {row.get('b_question', '')[:74]}")
     if leaks and args.verbose:
         print(f"\nmismatches still getting through ({len(leaks)}):")
         for row in leaks:
             print(f"  conf {row['confidence']:.2f} rules {fmt2(row.get('rules_sim'))} "
                   f"edge {row['edge'] * 100:+.1f}pp")
-            print(f"      K: {row['kalshi_question'][:74]}")
-            print(f"      P: {row['poly_question'][:74]}")
+            print(f"      A: {row.get('a_question', '')[:74]}")
+            print(f"      B: {row.get('b_question', '')[:74]}")
     return 0
 
 
@@ -2122,6 +2345,11 @@ def build_parser() -> argparse.ArgumentParser:
     g = parser.add_argument_group("fetching")
     g.add_argument("--min-volume-kalshi", type=float, default=CONFIG["min_volume_kalshi"])
     g.add_argument("--min-volume-poly", type=float, default=CONFIG["min_volume_poly"])
+    # PredictIt's /all/ feed carries no per-contract volume, so its markets all
+    # report zero; a non-zero floor here would silently drop every one of them.
+    g.add_argument("--min-volume-predictit", type=float, default=0.0)
+    g.add_argument("--no-predictit", action="store_true",
+                   help="skip PredictIt entirely (Kalshi vs Polymarket only)")
     g.add_argument("--max-markets", type=int, default=4000)
     g.add_argument("--kalshi-scan-limit", type=int, default=30000)
     g.add_argument("--kalshi-series", action="append", metavar="TICKER")
@@ -2139,6 +2367,7 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--weight-date", type=float, default=0.17)
     g.add_argument("--kalshi-fee-coeff", type=float, default=None)
     g.add_argument("--poly-fee-coeff", type=float, default=None)
+    g.add_argument("--predictit-fee-coeff", type=float, default=None)
     return parser
 
 

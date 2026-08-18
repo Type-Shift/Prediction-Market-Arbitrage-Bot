@@ -24,10 +24,10 @@ const WARNING_GLOSS = [
 
 const glossFor = (text) => (WARNING_GLOSS.find(([re]) => re.test(text)) || [null, ""])[1];
 
-function sideBlock(side, cls, pair) {
-  const box = el("div", "side " + cls);
+function sideBlock(side) {
+  const box = el("div", "side venue-" + side.venue);
   const head = el("div", "side-head");
-  head.append(el("span", "badge " + side.venue, side.venue.toUpperCase()));
+  head.append(el("span", "badge venue-" + side.venue, side.venue.toUpperCase()));
   if (side.category) head.append(el("span", "badge plain", side.category));
   box.append(head);
   box.append(el("div", "side-q", side.question));
@@ -91,15 +91,15 @@ function decomposition(pair) {
 function probabilityAxis(pair) {
   const wrap = el("div", "axisline");
   wrap.append(el("div", "rail"));
-  for (const [cls, side] of [["k", pair.kalshi], ["p", pair.polymarket]]) {
-    if (side.yes_bid === null || side.yes_ask === null) continue;
-    const span = el("div", "span " + cls);
+  [pair.a, pair.b].forEach((side, i) => {
+    if (side.yes_bid === null || side.yes_ask === null) return;
+    const span = el("div", "span venue-" + side.venue);
     span.style.left = (side.yes_bid * 100) + "%";
     span.style.width = Math.max(0.7, (side.yes_ask - side.yes_bid) * 100) + "%";
-    span.style.top = cls === "k" ? "6px" : "18px";
-    span.title = `${side.venue}: ${num(side.yes_bid, 3)} – ${num(side.yes_ask, 3)}`;
+    span.style.top = i === 0 ? "6px" : "18px";
+    span.title = `${venueLabel(side.venue)}: ${num(side.yes_bid, 3)} – ${num(side.yes_ask, 3)}`;
     wrap.append(span);
-  }
+  });
   for (const t of [0, 0.25, 0.5, 0.75, 1]) {
     const mark = el("div", "tickmark", (t * 100) + "%");
     mark.style.left = (t * 100) + "%";
@@ -233,8 +233,8 @@ function openDrawer(pair) {
   drawer.append(verdictSection(pair));
 
   const links = el("div", "linkrow");
-  for (const side of [pair.kalshi, pair.polymarket]) {
-    const a = el("a", "", `${side.venue} ↗`);
+  for (const side of [pair.a, pair.b]) {
+    const a = el("a", "", `${venueLabel(side.venue)} ↗`);
     a.href = side.url;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
@@ -245,15 +245,15 @@ function openDrawer(pair) {
   }
 
   drawer.append(drawerSection("Head to head",
-    sideBlock(pair.kalshi, "k", pair), sideBlock(pair.polymarket, "p", pair), links));
+    sideBlock(pair.a), sideBlock(pair.b), links));
 
   drawer.append(drawerSection(`Confidence ${num(pair.confidence)}`, decomposition(pair)));
 
   const bookNote = el("p", "panel-note");
   bookNote.textContent = pair.priced_at_top_of_book
     ? "Priced at top of book only — depth was not fetched for this pair, so the size shown may not be available."
-    : `Depth walked: ${pair.kalshi.yes_depth ?? "—"} contracts on Kalshi, `
-      + `${pair.polymarket.yes_depth ?? "—"} on Polymarket.`;
+    : `Depth walked: ${pair.a.yes_depth ?? "—"} contracts on ${venueLabel(pair.a.venue)}, `
+      + `${pair.b.yes_depth ?? "—"} on ${venueLabel(pair.b.venue)}.`;
   drawer.append(drawerSection("Quoted probability", probabilityAxis(pair), bookNote));
 
   drawer.append(drawerSection(`Economics at ${pair.contracts || 100} contracts`, economics(pair)));
@@ -272,9 +272,9 @@ function openDrawer(pair) {
 
   const rules = el("div", "grid2");
   const left = el("div");
-  left.append(el("div", "muted", "Kalshi"), rulesPane(pair.kalshi.rules, pair.polymarket.rules));
+  left.append(el("div", "muted", venueLabel(pair.a.venue)), rulesPane(pair.a.rules, pair.b.rules));
   const right = el("div");
-  right.append(el("div", "muted", "Polymarket"), rulesPane(pair.polymarket.rules, pair.kalshi.rules));
+  right.append(el("div", "muted", venueLabel(pair.b.venue)), rulesPane(pair.b.rules, pair.a.rules));
   rules.append(left, right);
   drawer.append(drawerSection("Resolution criteria", rules,
     el("p", "caveat",
@@ -285,9 +285,9 @@ function openDrawer(pair) {
   drawer.hidden = false;
   $("scrim").hidden = false;
   drawer.scrollTop = 0;
-  // Deep-linkable: ?pair=<kalshi id> reopens this drawer, so a pair worth a
+  // Deep-linkable: ?pair=<pair key> reopens this drawer, so a pair worth a
   // second opinion can be sent to someone as a URL.
-  history.replaceState(null, "", "?pair=" + encodeURIComponent(pair.kalshi.id) + location.hash);
+  history.replaceState(null, "", "?pair=" + encodeURIComponent(pairKey(pair)) + location.hash);
 }
 
 function closeDrawer() {

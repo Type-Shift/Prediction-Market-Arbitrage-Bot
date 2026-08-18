@@ -54,6 +54,20 @@ function relativeTime(iso) {
 
 const truncate = (text, n) => (text || "").length > n ? text.slice(0, n - 1) + "…" : (text || "");
 
+/* ── venues ────────────────────────────────────────────────────────────── */
+
+// A side's human label is its `venue` string, Title-cased. The map keeps the
+// house spellings (PredictIt, not Predictit); anything unlisted falls back to a
+// plain capitalise, so a new venue renders sanely with no code change here.
+const VENUE_LABELS = { kalshi: "Kalshi", polymarket: "Polymarket", predictit: "PredictIt" };
+const venueLabel = (v) => VENUE_LABELS[v] || (v ? v[0].toUpperCase() + v.slice(1) : "—");
+App.venueLabel = venueLabel;
+
+// Short all-caps code for the tight board cells — the market ticks and the leg
+// badges. Same lookup-with-fallback shape as venueLabel.
+const VENUE_TICKS = { kalshi: "KAL", polymarket: "POLY", predictit: "PRED" };
+const venueTick = (v) => VENUE_TICKS[v] || (v || "").slice(0, 4).toUpperCase() || "—";
+
 /* ── the gate, mirrored from scanner.py ────────────────────────────────── */
 
 /**
@@ -81,8 +95,14 @@ function passesEdgeFloor(pair, t) {
 App.passesGates = passesGates;
 App.passesEdgeFloor = passesEdgeFloor;
 
-/** Same key `review`/`score` use to join a label to a pair. */
-const labelKey = (pair) => `${pair.kalshi.id}|${pair.polymarket.url}`;
+/**
+ * Stable identity for a pair: each side's venue-qualified id. Used to join
+ * labels and the model's verdicts to a pair, and to deep-link the drawer.
+ * `review`/`score` build the same key. There is no fixed kalshi/poly side any
+ * more, so the key is symmetric in the venues it happens to hold.
+ */
+const pairKey = (pair) => `${pair.a.venue}:${pair.a.id}|${pair.b.venue}:${pair.b.id}`;
+const labelKey = pairKey;
 App.labelKey = labelKey;
 
 /* ── the model's verdict (judge.py → results/judged.json) ──────────────── */
@@ -115,14 +135,13 @@ App.verdictInfo = verdictInfo;
 /** Join results/judged.json onto the loaded pairs by the same identity key. */
 function attachVerdicts(judged) {
   if (!Array.isArray(judged)) return;
+  normalizePairs(judged);
   const map = new Map();
   for (const p of judged) {
-    if (p && p.kalshi && p.polymarket && p.llm_verdict) {
-      map.set(`${p.kalshi.id}|${p.polymarket.url}`, p.llm_verdict);
-    }
+    if (p && p.a && p.b && p.llm_verdict) map.set(pairKey(p), p.llm_verdict);
   }
   for (const pair of App.pairs) {
-    const v = map.get(labelKey(pair));
+    const v = map.get(pairKey(pair));
     if (v) pair.llm_verdict = v;
   }
 }
@@ -134,6 +153,24 @@ const anyVerdicts = () => App.pairs.some((p) => p.llm_verdict);
 App.anyVerdicts = anyVerdicts;
 
 /* ── loading ───────────────────────────────────────────────────────────── */
+
+/**
+ * Backfill the generic sides on an old scan.
+ *
+ * A results/latest.json committed before N-venue matching carries the fixed
+ * `kalshi`/`polymarket` keys and no `a`/`b`. Both already hold a `venue` field,
+ * so aliasing them onto `a`/`b` is all the rest of the app needs to render old
+ * data instead of a blank board. Runs on every load; a no-op on new scans.
+ */
+function normalizePairs(pairs) {
+  if (Array.isArray(pairs)) {
+    for (const p of pairs) {
+      if (p && !p.a && p.kalshi) { p.a = p.kalshi; p.b = p.polymarket; }
+    }
+  }
+  return pairs;
+}
+App.normalizePairs = normalizePairs;
 
 async function getJSON(path) {
   const res = await fetch(path, { cache: "no-store" });
@@ -211,7 +248,7 @@ function metaFromLog(text, generatedAt) {
 }
 
 async function loadFromServer() {
-  App.pairs = await getJSON(RESULTS + "latest.json");
+  App.pairs = normalizePairs(await getJSON(RESULTS + "latest.json"));
 
   // Optional companion file: the model's review of the top pairs. Absent when
   // no judge has run, in which case the board is unchanged.
@@ -270,11 +307,13 @@ function loadFromFiles(files) {
       // judged.json is also an array of pairs, so it must be caught by name
       // before the generic "looks like the scan" branch claims it.
       else if (item.name.includes("judged")) judged = data;
-      else if (Array.isArray(data) && data.length && data[0].kalshi) App.pairs = data;
+      // A scan file is an array of pairs — new ones carry `a`, old ones `kalshi`.
+      else if (Array.isArray(data) && data.length && (data[0].a || data[0].kalshi)) App.pairs = data;
     }
     if (!App.meta && log) App.meta = metaFromLog(log, null);
     if (!App.meta) App.meta = metaFromLog("", null);
     if (!App.pairs.length) throw new Error("no scan file among those — expected latest.json");
+    normalizePairs(App.pairs);
     if (judged) attachVerdicts(judged);
   });
 }
@@ -304,9 +343,9 @@ function visibleRows() {
 
   if (q) {
     rows = rows.filter(({ pair }) => {
-      const hay = [pair.kalshi.question, pair.polymarket.question,
-                   pair.kalshi.rules, pair.polymarket.rules,
-                   pair.kalshi.id].join(" ").toLowerCase();
+      const hay = [pair.a.question, pair.b.question,
+                   pair.a.rules, pair.b.rules,
+                   pair.a.id, pair.b.id].join(" ").toLowerCase();
       return hay.includes(q);
     });
   }
@@ -420,10 +459,10 @@ function gapCell(pair, maxGap) {
   const wrap = document.createDocumentFragment();
   wrap.append(el("span", pair.mid_gap >= 0 ? "" : "", signedPp(pair.mid_gap)));
   const viz = el("span", "gapviz");
-  const bar = el("i");
+  // The bar leans toward the richer side and takes that venue's colour.
+  const bar = el("i", "venue-" + (pair.mid_gap >= 0 ? pair.a : pair.b).venue);
   const frac = Math.min(1, Math.abs(pair.mid_gap) / (maxGap || 1)) * 0.5;
   bar.style.width = (frac * 100) + "%";
-  bar.style.background = `var(--${pair.mid_gap >= 0 ? "kalshi" : "poly"})`;
   if (pair.mid_gap >= 0) bar.style.left = "50%"; else bar.style.right = "50%";
   viz.append(bar);
   wrap.append(viz);
@@ -447,25 +486,26 @@ function confidenceCell(pair) {
   return row;
 }
 
-/** "buy YES kalshi / NO polymarket" → two badges plus an arrow. */
+/** "buy YES kalshi / NO predictit" → two side/venue badge pairs and an arrow. */
 function legCell(pair) {
   const wrap = el("div", "leg");
   const m = (pair.edge_leg || "").match(/buy (\w+) (\w+) \/ (\w+) (\w+)/i);
   if (!m) { wrap.append(el("span", "faint", "—")); return wrap; }
+  const venueA = m[2].toLowerCase(), venueB = m[4].toLowerCase();
   wrap.append(el("span", "badge " + m[1].toLowerCase(), m[1].toUpperCase()));
-  wrap.append(el("span", "badge " + m[2].toLowerCase(), m[2] === "kalshi" ? "K" : "P"));
+  wrap.append(el("span", "badge venue-" + venueA, venueTick(venueA)));
   wrap.append(el("span", "faint", "/"));
   wrap.append(el("span", "badge " + m[3].toLowerCase(), m[3].toUpperCase()));
-  wrap.append(el("span", "badge " + m[4].toLowerCase(), m[4] === "kalshi" ? "K" : "P"));
+  wrap.append(el("span", "badge venue-" + venueB, venueTick(venueB)));
   wrap.title = pair.edge_leg;
   return wrap;
 }
 
 function marketsCell(pair) {
   const wrap = el("div", "qpair");
-  for (const [cls, side] of [["k", pair.kalshi], ["p", pair.polymarket]]) {
-    const line = el("div", "qline " + cls);
-    line.append(el("span", "tick", cls === "k" ? "KAL" : "POLY"));
+  for (const side of [pair.a, pair.b]) {
+    const line = el("div", "qline venue-" + side.venue);
+    line.append(el("span", "tick", venueTick(side.venue)));
     const txt = el("span", "txt", side.question);
     txt.title = side.question;
     line.append(txt);
@@ -560,8 +600,9 @@ App.renderBoard = renderBoard;
 
 function exportCsv() {
   const columns = ["confidence", "mid_gap", "edge", "annualised", "days_to_settle", "edge_leg",
-                   "cost_per_contract", "priced_at_top_of_book", "kalshi_mid", "poly_mid",
-                   "kalshi_question", "poly_question", "kalshi_id", "poly_url",
+                   "cost_per_contract", "priced_at_top_of_book",
+                   "a_venue", "a_mid", "b_venue", "b_mid",
+                   "a_question", "b_question", "a_id", "b_id",
                    "title_similarity", "rules_similarity", "days_apart", "warnings",
                    "llm_verdict", "llm_confidence", "llm_divergence"];
   const cell = (v) => {
@@ -572,8 +613,9 @@ function exportCsv() {
   for (const { pair: p } of visibleRows()) {
     const v = p.llm_verdict || {};
     lines.push([p.confidence, p.mid_gap, p.edge, p.annualised, p.days_to_settle, p.edge_leg,
-                p.cost_per_contract, p.priced_at_top_of_book, p.kalshi.mid, p.polymarket.mid,
-                p.kalshi.question, p.polymarket.question, p.kalshi.id, p.polymarket.url,
+                p.cost_per_contract, p.priced_at_top_of_book,
+                p.a.venue, p.a.mid, p.b.venue, p.b.mid,
+                p.a.question, p.b.question, p.a.id, p.b.id,
                 p.title_similarity, p.rules_similarity, p.days_apart,
                 p.warnings.join("; "),
                 v.verdict || "", v.confidence, v.divergence || ""].map(cell).join(","));
@@ -719,7 +761,7 @@ function start() {
 
   const wanted = new URLSearchParams(location.search).get("pair");
   if (wanted) {
-    const pair = App.pairs.find((p) => p.kalshi.id === wanted);
+    const pair = App.pairs.find((p) => pairKey(p) === wanted);
     if (pair) openDrawer(pair);
   }
 

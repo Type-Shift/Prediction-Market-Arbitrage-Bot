@@ -32,7 +32,8 @@ def make_pair(k, p, **kw):
     defaults = dict(title_sim=0.9, rules_sim=0.9, date_sim=1.0, penalty=0.0,
                     confidence=0.9, days_apart=0.0, warnings=[])
     defaults.update(kw)
-    return s.Pair(kalshi=k, poly=p, **defaults)
+    a, b = s.canonical_sides(k, p)
+    return s.Pair(a=a, b=b, **defaults)
 
 
 class TestNumbers(unittest.TestCase):
@@ -390,6 +391,77 @@ class TestScorePair(unittest.TestCase):
                                     f"ceiling breached for {qk!r} / {qp!r}")
 
 
+class TestPredictIt(unittest.TestCase):
+    def test_price_parser_scales_and_guards(self):
+        self.assertEqual(s.predictit_price(0.42), 0.42)       # dollars, as-is
+        self.assertEqual(s.predictit_price(42), 0.42)         # cents-style feed
+        self.assertIsNone(s.predictit_price(0))               # no quote
+        self.assertIsNone(s.predictit_price(None))
+        self.assertIsNone(s.predictit_price("N/A"))
+
+    def test_flatten_is_one_row_per_contract(self):
+        markets = [{"id": 1, "name": "M", "url": "u",
+                    "contracts": [{"id": 11, "name": "A"}, {"id": 12, "name": "B"}]}]
+        rows = s.predictit_flatten(markets)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(r["multi"] for r in rows))     # >1 contract => a ladder
+        self.assertEqual(rows[0]["market_id"], 1)
+
+    def test_contract_becomes_a_binary_market(self):
+        row = {"market_id": 1, "market_name": "Who wins?", "market_url": "u", "multi": True,
+               "contract": {"id": 11, "name": "Alice", "status": "Open",
+                            "bestBuyYesCost": 0.40, "bestBuyNoCost": 0.62,
+                            "bestSellYesCost": 0.38, "bestSellNoCost": 0.60,
+                            "dateEnd": "2026-11-03T00:00:00"}}
+        m = s.predictit_to_market(row, Counter())
+        self.assertEqual(m.venue, "predictit")
+        self.assertEqual(m.yes_ask, 0.40)
+        self.assertIn("Alice", m.question)
+        self.assertEqual(m.group_key, "1")                 # siblings share the market
+
+    def test_closed_contract_is_dropped(self):
+        row = {"market_id": 1, "market_name": "M", "multi": False,
+               "contract": {"id": 11, "status": "Closed", "bestBuyYesCost": 0.4}}
+        self.assertIsNone(s.predictit_to_market(row, Counter()))
+
+
+class TestMesh(unittest.TestCase):
+    def _prepared(self, venues):
+        markets = [make_market(venue=v, question="fed cuts rates in september 2026")
+                   for v in venues]
+        for m in markets:
+            m.prepare()
+        idf = s.build_idf([m.tokens for m in markets])
+        for m in markets:
+            m.vector = s.tfidf_vector(m.tokens, idf)
+            m.rule_vector = s.tfidf_vector(m.rule_tokens, idf)
+        return markets, idf
+
+    def test_candidates_are_cross_venue_only(self):
+        markets, idf = self._prepared(["kalshi", "polymarket", "predictit"])
+        pairs = s.candidate_pairs(markets, idf, 40, 0.25)
+        # Three markets, all different venues -> the three cross-venue pairs,
+        # each once, and never a venue against itself.
+        self.assertEqual(len(pairs), 3)
+        for i, j in pairs:
+            self.assertNotEqual(markets[i].venue, markets[j].venue)
+
+    def test_same_venue_never_pairs(self):
+        markets, idf = self._prepared(["kalshi", "kalshi"])
+        self.assertEqual(s.candidate_pairs(markets, idf, 40, 0.25), set())
+
+    def test_sides_are_in_canonical_venue_order(self):
+        k, p = make_market(venue="kalshi"), make_market(venue="polymarket")
+        for m in (k, p):
+            m.vector = s.tfidf_vector(m.tokens, {})
+            m.rule_vector = {}
+        # Whichever order the two arrive in, side A is the earlier-ranked venue.
+        for pair in (s.score_pair(k, p, (0.55, 0.28, 0.17)),
+                     s.score_pair(p, k, (0.55, 0.28, 0.17))):
+            self.assertEqual(pair.a.venue, "kalshi")
+            self.assertEqual(pair.b.venue, "polymarket")
+
+
 class TestDashboardOutputs(unittest.TestCase):
     """The files the dashboard reads: results/meta.json and results/history/."""
 
@@ -435,9 +507,9 @@ class TestDashboardOutputs(unittest.TestCase):
         with open(os.path.join(self.dir, name), encoding="utf-8") as fh:
             snapshot = json.load(fh)
         self.assertEqual(name, "2026-01-02T03-04-05Z.json")
-        self.assertNotIn("rules", snapshot[0]["kalshi"])
-        self.assertNotIn("rules", snapshot[0]["polymarket"])
-        self.assertIn("question", snapshot[0]["kalshi"])
+        self.assertNotIn("rules", snapshot[0]["a"])
+        self.assertNotIn("rules", snapshot[0]["b"])
+        self.assertIn("question", snapshot[0]["a"])
         self.assertEqual(snapshot[0]["edge"], 0.01)
 
     def test_history_index_appends_and_summarises(self):

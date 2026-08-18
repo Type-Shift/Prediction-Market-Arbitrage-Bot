@@ -270,14 +270,15 @@ class TestBotEndpoint(ServerCase):
 
 class TestLabels(ServerCase):
     def test_labels_are_written_to_the_file_score_reads(self):
-        rows = [{"kalshi_id": "K1", "poly_url": "https://poly/1", "label": "match",
-                 "kalshi_question": "q", "poly_question": "p", "confidence": 0.8,
-                 "rules_similarity": 0.6, "edge": 0.02, "note": ""}]
+        rows = [{"a_venue": "kalshi", "a_id": "K1", "a_question": "q",
+                 "b_venue": "polymarket", "b_id": "P1", "b_question": "p",
+                 "key": "kalshi:K1|polymarket:P1", "label": "match",
+                 "confidence": 0.8, "rules_sim": 0.6, "edge": 0.02, "note": ""}]
         status, body = self.post("/api/labels", {"labels": rows})
         self.assertEqual(status, 200)
         self.assertEqual(body["saved"], 1)
         with open(s.LABELS_PATH, encoding="utf-8") as fh:
-            self.assertEqual(json.load(fh)[0]["kalshi_id"], "K1")
+            self.assertEqual(json.load(fh)[0]["a_id"], "K1")
 
     def test_a_non_list_payload_is_refused(self):
         status, body = self.post("/api/labels", {"labels": {"nope": True}})
@@ -297,8 +298,9 @@ class TestVerdictMerge(unittest.TestCase):
         self.addCleanup(lambda: setattr(app, "RESULTS_DIR", self._saved))
 
     @staticmethod
-    def _record(kid, url):
-        return {"kalshi": {"id": kid}, "polymarket": {"url": url}, "edge": 0.02}
+    def _record(kid, bid):
+        return {"a": {"venue": "kalshi", "id": kid},
+                "b": {"venue": "polymarket", "id": bid}, "edge": 0.02}
 
     def _write_judged(self, rows):
         with open(os.path.join(app.RESULTS_DIR, "judged.json"), "w", encoding="utf-8") as fh:
@@ -325,7 +327,8 @@ class TestVerdictMerge(unittest.TestCase):
         self.assertNotIn("llm_verdict", recs[0])  # the bot's copy stays clean
 
     def test_pair_without_verdict_key_is_ignored(self):
-        self._write_judged([{"kalshi": {"id": "K1"}, "polymarket": {"url": "U1"}}])  # no llm_verdict
+        self._write_judged([{"a": {"venue": "kalshi", "id": "K1"},
+                             "b": {"venue": "polymarket", "id": "U1"}}])  # no llm_verdict
         out = app.with_verdicts([self._record("K1", "U1")])
         self.assertNotIn("llm_verdict", out[0])  # empty map → passthrough, untouched
 
@@ -336,8 +339,8 @@ class TestVerdictInState(ServerCase):
         self.assertTrue(state["pairs"], "need at least one pair to tag")
         target = state["pairs"][0]
         judged = [{
-            "kalshi": {"id": target["kalshi"]["id"]},
-            "polymarket": {"url": target["polymarket"]["url"]},
+            "a": {"venue": target["a"]["venue"], "id": target["a"]["id"]},
+            "b": {"venue": target["b"]["venue"], "id": target["b"]["id"]},
             "llm_verdict": {"verdict": "equivalent", "confidence": 0.88,
                             "divergence": "none found"},
         }]
@@ -346,11 +349,11 @@ class TestVerdictInState(ServerCase):
 
         _, state = self.get("/api/state")
         tagged = next(p for p in state["pairs"]
-                      if p["kalshi"]["id"] == target["kalshi"]["id"])
+                      if p["a"]["id"] == target["a"]["id"])
         self.assertEqual(tagged["llm_verdict"]["verdict"], "equivalent")
         # A different pair carries the key as None, not missing.
         others = [p for p in state["pairs"]
-                  if p["kalshi"]["id"] != target["kalshi"]["id"]]
+                  if p["a"]["id"] != target["a"]["id"]]
         if others:
             self.assertIsNone(others[0]["llm_verdict"])
 
@@ -450,7 +453,8 @@ class TestRemoteScan(ServerCase):
         return (0, "", "")
 
     def _write_results(self):
-        rec = [{"kalshi": {"id": "RK1"}, "polymarket": {"url": "https://poly/rk1"},
+        rec = [{"a": {"venue": "kalshi", "id": "RK1"},
+                "b": {"venue": "polymarket", "id": "poly-rk1"},
                 "edge": 0.05, "annualised_edge": 0.2}]
         with open(os.path.join(app.RESULTS_DIR, "latest.json"), "w",
                   encoding="utf-8") as fh:
@@ -468,7 +472,7 @@ class TestRemoteScan(ServerCase):
         state = self.scan_and_wait()
         self.assertIsNone(state["run"]["last_error"])
         self.assertTrue(state["pairs"])
-        self.assertEqual(state["pairs"][0]["kalshi"]["id"], "RK1")
+        self.assertEqual(state["pairs"][0]["a"]["id"], "RK1")
 
     def test_a_failed_run_surfaces_as_an_error(self):
         self.conclusion = "failure"

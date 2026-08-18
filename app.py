@@ -592,10 +592,12 @@ def load_history() -> list:
 
 
 def verdict_key(record: dict) -> str:
-    """Pair identity — the same key judge.py, review and score all join on."""
-    k = record.get("kalshi") or {}
-    p = record.get("polymarket") or {}
-    return f"{k.get('id', '')}|{p.get('url', '')}"
+    """Pair identity — the same key judge.py, the labels harness and the
+    dashboard's pairKey all join on: side A and side B by venue and id."""
+    a = record.get("a") or {}
+    b = record.get("b") or {}
+    return scanner.pair_identity(a.get("venue", ""), a.get("id", ""),
+                                 b.get("venue", ""), b.get("id", ""))
 
 
 def load_verdicts() -> dict:

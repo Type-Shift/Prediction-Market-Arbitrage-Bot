@@ -1,0 +1,53 @@
+{
+  "markets": [
+    {
+      "id": 7001,
+      "name": "Will the Fed cut interest rates at its September 2026 meeting?",
+      "shortName": "Fed Sept 2026 cut",
+      "url": "https://www.predictit.org/markets/detail/7001",
+      "contracts": [
+        {
+          "id": 70011,
+          "name": "Fed cuts rates in September 2026",
+          "status": "Open",
+          "bestBuyYesCost": 0.58,
+          "bestBuyNoCost": 0.44,
+          "bestSellYesCost": 0.56,
+          "bestSellNoCost": 0.42,
+          "lastTradePrice": 0.57,
+          "dateEnd": "2026-09-30T00:00:00"
+        }
+      ]
+    },
+    {
+      "id": 7002,
+      "name": "Which party will control the US Senate after the 2026 midterms?",
+      "shortName": "Senate control 2026",
+      "url": "https://www.predictit.org/markets/detail/7002",
+      "contracts": [
+        {
+          "id": 70021,
+          "name": "Republicans",
+          "status": "Open",
+          "bestBuyYesCost": 0.55,
+          "bestBuyNoCost": 0.47,
+          "bestSellYesCost": 0.53,
+          "bestSellNoCost": 0.45,
+          "lastTradePrice": 0.54,
+          "dateEnd": "2026-11-03T00:00:00"
+        },
+        {
+          "id": 70022,
+          "name": "Democrats",
+          "status": "Open",
+          "bestBuyYesCost": 0.48,
+          "bestBuyNoCost": 0.54,
+          "bestSellYesCost": 0.46,
+          "bestSellNoCost": 0.52,
+          "lastTradePrice": 0.47,
+          "dateEnd": "2026-11-03T00:00:00"
+        }
+      ]
+    }
+  ]
+}

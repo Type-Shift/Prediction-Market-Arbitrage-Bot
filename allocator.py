@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Paper-trading allocator for the Kalshi/Polymarket scanner.
+"""Paper-trading allocator for the cross-venue divergence scanner.
 
 Reads the pairs the scanner flagged as profitable and spreads a simulated
 bankroll across them. It favours the pairs that resolve soonest and never
@@ -96,10 +96,11 @@ def parse_time(value) -> datetime | None:
 
 
 def pair_key(pair: dict) -> str:
-    """Stable identity for a pair, so re-running does not double-allocate."""
-    k = pair.get("kalshi", {}).get("id", "")
-    p = pair.get("polymarket", {}).get("url", "")
-    return f"{k}|{p}"
+    """Stable identity for a pair, so re-running does not double-allocate. The
+    same venue:id|venue:id form the scanner, judge and dashboard all join on."""
+    a = pair.get("a", {})
+    b = pair.get("b", {})
+    return f"{a.get('venue', '')}:{a.get('id', '')}|{b.get('venue', '')}:{b.get('id', '')}"
 
 
 def money(x: float) -> str:
@@ -287,10 +288,12 @@ def plan_allocation(portfolio: dict, pairs: list[dict], cfg: dict) -> tuple[list
         stake = round(contracts * cost, 4)
         orders.append({
             "key": pair_key(pair),
-            "kalshi_id": pair["kalshi"]["id"],
-            "kalshi_q": pair["kalshi"]["question"],
-            "poly_url": pair["polymarket"]["url"],
-            "poly_q": pair["polymarket"]["question"],
+            "a_venue": pair["a"]["venue"],
+            "a_id": pair["a"]["id"],
+            "a_q": pair["a"]["question"],
+            "b_venue": pair["b"]["venue"],
+            "b_id": pair["b"]["id"],
+            "b_q": pair["b"]["question"],
             "leg": pair.get("edge_leg", ""),
             "cost_per_contract": cost,
             "contracts": contracts,
@@ -298,8 +301,8 @@ def plan_allocation(portfolio: dict, pairs: list[dict], cfg: dict) -> tuple[list
             "edge": pair["edge"],
             "confidence": pair.get("confidence"),
             "days_to_settle": pair.get("days_to_settle"),
-            "settle_time": (pair.get("kalshi", {}).get("settle_time")
-                            or pair.get("polymarket", {}).get("settle_time")),
+            "settle_time": (pair.get("a", {}).get("settle_time")
+                            or pair.get("b", {}).get("settle_time")),
             "payoff_if_hedged": contracts * 1.0,
             "profit_if_hedged": round(contracts * (1.0 - cost), 4),
         })
@@ -394,8 +397,8 @@ def print_status(portfolio: dict) -> None:
             days_s = f"{days:.0f}d" if days is not None else "  ?"
             print(f"    [{days_s:>4}]  stake {money(pos['stake']):>10}  "
                   f"edge {pos['edge'] * 100:+.1f}pp  conf {pos.get('confidence', 0):.2f}")
-            print(f"            K: {pos['kalshi_q'][:70]}")
-            print(f"            P: {pos['poly_q'][:70]}")
+            print(f"            {pos.get('a_venue', 'a')[:4].upper():<4} {pos['a_q'][:70]}")
+            print(f"            {pos.get('b_venue', 'b')[:4].upper():<4} {pos['b_q'][:70]}")
 
 
 def print_plan(orders: list[dict], notes: list[str], portfolio: dict) -> None:
@@ -414,8 +417,8 @@ def print_plan(orders: list[dict], notes: list[str], portfolio: dict) -> None:
               f"= stake {money(o['stake'])}  -> {money(o['payoff_if_hedged'])} if hedge holds "
               f"({o['edge'] * 100:+.1f}pp)")
         print(f"          {o['leg']}")
-        print(f"          K: {o['kalshi_q'][:68]}")
-        print(f"          P: {o['poly_q'][:68]}")
+        print(f"          {o.get('a_venue', 'a')[:4].upper():<4} {o['a_q'][:68]}")
+        print(f"          {o.get('b_venue', 'b')[:4].upper():<4} {o['b_q'][:68]}")
 
 
 # ---------------------------------------------------------------------------

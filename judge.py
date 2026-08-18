@@ -44,9 +44,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 SYSTEM_PROMPT = """You are a meticulous resolution-rules auditor for prediction markets.
 
-You are given one market from Kalshi and one from Polymarket that a keyword \
-matcher flagged as possibly identical. Decide whether a YES position on one \
-pays out under EXACTLY the same circumstances as a YES on the other.
+You are given two prediction markets from different venues (each labelled with \
+its venue) that a keyword matcher flagged as possibly identical. Decide whether \
+a YES position on one pays out under EXACTLY the same circumstances as a YES on \
+the other.
 
 Work adversarially. These two look alike on the surface — that is precisely \
 why they were flagged, and surface similarity is not evidence they resolve the \
@@ -158,10 +159,11 @@ def shorten(text: str, cap: int) -> str:
 
 
 def build_user_content(pair: dict) -> str:
-    k = pair.get("kalshi", {})
-    p = pair.get("polymarket", {})
+    a = pair.get("a", {})
+    b = pair.get("b", {})
 
-    def block(label: str, m: dict) -> str:
+    def block(m: dict) -> str:
+        label = (m.get("venue") or "venue").upper()
         rules = shorten(m.get("rules", ""), RULES_CHAR_CAP) or "(no resolution text provided)"
         return (
             f"{label}\n"
@@ -171,10 +173,12 @@ def build_user_content(pair: dict) -> str:
             f"  rules:    {rules}"
         )
 
+    va = (a.get("venue") or "the first venue").upper()
+    vb = (b.get("venue") or "the second venue").upper()
     return (
-        "Do a YES on KALSHI and a YES on POLYMARKET below pay out under exactly "
+        f"Do a YES on {va} and a YES on {vb} below pay out under exactly "
         "the same circumstances?\n\n"
-        + block("KALSHI", k) + "\n\n" + block("POLYMARKET", p)
+        + block(a) + "\n\n" + block(b)
     )
 
 
@@ -228,13 +232,13 @@ MARK = {"equivalent": "MATCH", "likely_equivalent": "LIKELY", "different": "MISM
 
 
 def render_verdict(i: int, pair: dict, v: dict) -> str:
-    k = pair.get("kalshi", {}).get("question", "")
-    p = pair.get("polymarket", {}).get("question", "")
+    a = pair.get("a", {})
+    b = pair.get("b", {})
     lines = [f"[{i}] " + ("ERROR: " + v["error"] if "error" in v else
                           f"{MARK.get(v['verdict'], v['verdict'])}  "
                           f"confidence {float(v.get('confidence', 0)):.0%}")]
-    lines.append(f"    K: {shorten(k, 80)}")
-    lines.append(f"    P: {shorten(p, 80)}")
+    lines.append(f"    {(a.get('venue') or 'a')[:4].upper():<4} {shorten(a.get('question', ''), 80)}")
+    lines.append(f"    {(b.get('venue') or 'b')[:4].upper():<4} {shorten(b.get('question', ''), 80)}")
     if "error" not in v:
         lines.append(f"    source {v['resolution_source']} | timing {v['timing']} | "
                      f"threshold/polarity {v['threshold_and_polarity']}")
@@ -347,8 +351,8 @@ def cmd_score(args, api_key: str) -> int:
     tp = fp = tn = fn = 0
     for row in rows:
         pair = {
-            "kalshi": {"question": row.get("kalshi_question", "")},
-            "polymarket": {"question": row.get("poly_question", "")},
+            "a": {"venue": row.get("a_venue", ""), "question": row.get("a_question", "")},
+            "b": {"venue": row.get("b_venue", ""), "question": row.get("b_question", "")},
         }
         v = judge_pair(pair, api_key, args.model, args.max_tokens)
         if "error" in v:

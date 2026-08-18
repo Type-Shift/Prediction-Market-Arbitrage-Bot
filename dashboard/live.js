@@ -58,7 +58,9 @@
 
   /** Adopt a whole /api/state payload into App. */
   function adopt(state) {
-    App.pairs = state.pairs || [];
+    // Normalize so a backend still serving old-shape pairs (kalshi/polymarket)
+    // renders the same as new a/b pairs; a no-op once the scanner is generalized.
+    App.pairs = App.normalizePairs(state.pairs || []);
     App.meta = state.meta || App.meta;
     App.history = state.history || [];
     App.bot = state.bot || null;

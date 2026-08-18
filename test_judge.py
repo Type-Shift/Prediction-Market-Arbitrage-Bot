@@ -37,10 +37,12 @@ GOOD_VERDICT = {
 def a_pair(kq="Will X be head of state of Y on Dec 31?",
            pq="Will X be the leader of Y end of year?"):
     return {
-        "kalshi": {"question": kq, "category": "world", "settle_time": "2026-12-31",
-                   "rules": "Resolves YES if X is the head of state on that date."},
-        "polymarket": {"question": pq, "category": "world", "settle_time": "2026-12-31",
-                       "rules": "Resolves YES if X is the leader at year end."},
+        "a": {"venue": "kalshi", "question": kq, "category": "world",
+              "settle_time": "2026-12-31",
+              "rules": "Resolves YES if X is the head of state on that date."},
+        "b": {"venue": "polymarket", "question": pq, "category": "world",
+              "settle_time": "2026-12-31",
+              "rules": "Resolves YES if X is the leader at year end."},
     }
 
 
@@ -53,13 +55,14 @@ class TestPromptBuilding(unittest.TestCase):
         self.assertIn("leader", text)
 
     def test_missing_rules_are_labelled_not_blank(self):
-        pair = {"kalshi": {"question": "q"}, "polymarket": {"question": "q"}}
+        pair = {"a": {"venue": "kalshi", "question": "q"},
+                "b": {"venue": "polymarket", "question": "q"}}
         text = judge.build_user_content(pair)
         self.assertIn("no resolution text provided", text)
 
     def test_rules_are_capped(self):
-        big = {"kalshi": {"question": "q", "rules": "x" * 10000},
-               "polymarket": {"question": "q", "rules": "y" * 10000}}
+        big = {"a": {"venue": "kalshi", "question": "q", "rules": "x" * 10000},
+               "b": {"venue": "polymarket", "question": "q", "rules": "y" * 10000}}
         text = judge.build_user_content(big)
         self.assertLess(len(text), 2 * judge.RULES_CHAR_CAP + 500)
 

@@ -24,9 +24,11 @@ def pair(key="K1", edge=0.03, cost=0.95, days=10, conf=0.8, rules=0.6,
         "confidence": conf, "rules_similarity": rules, "edge": edge,
         "cost_per_contract": cost, "days_to_settle": days, "edge_leg": leg,
         "warnings": warnings or [], "priced_at_top_of_book": top_only,
-        "kalshi": {"id": kid, "question": f"Q {key}?", "settle_time": settle_iso},
-        "polymarket": {"url": f"https://polymarket.com/market/{key}",
-                       "question": f"Q {key}?", "settle_time": settle_iso},
+        "a": {"venue": "kalshi", "id": kid, "question": f"Q {key}?",
+              "url": f"https://kalshi.com/markets/{key}", "settle_time": settle_iso},
+        "b": {"venue": "polymarket", "id": f"poly-{key}",
+              "url": f"https://polymarket.com/market/{key}",
+              "question": f"Q {key}?", "settle_time": settle_iso},
     }
 
 
@@ -98,8 +100,8 @@ class TestAllocation(unittest.TestCase):
                  pair("LATE", edge=0.02, days=300)]
         orders, _ = a.plan_allocation(port, pairs, cfg)
         picked = {o["key"] for o in orders}
-        self.assertIn("KX-SOON|https://polymarket.com/market/SOON", picked)
-        self.assertNotIn("KX-LATE|https://polymarket.com/market/LATE", picked)
+        self.assertIn("kalshi:KX-SOON|polymarket:poly-SOON", picked)
+        self.assertNotIn("kalshi:KX-LATE|polymarket:poly-LATE", picked)
 
     def test_dedupe_against_open_positions(self):
         port = fresh_portfolio(1000)
@@ -152,8 +154,8 @@ class TestSettlement(unittest.TestCase):
         port = fresh_portfolio(1000)
         settle = (a.now_utc() - timedelta(days=days_ago)).isoformat()
         p = pair("S", cost=0.90, days=1, settle=None)
-        p["kalshi"]["settle_time"] = settle
-        p["polymarket"]["settle_time"] = settle
+        p["a"]["settle_time"] = settle
+        p["b"]["settle_time"] = settle
         orders, _ = a.plan_allocation(port, [p], dict(CFG, positions=1,
                                                      deploy_frac=1.0, min_confidence=0.6))
         a.apply_orders(port, orders)
@@ -195,8 +197,8 @@ class TestSettlement(unittest.TestCase):
         pairs = []
         for i in range(8):
             p = pair(f"M{i}", edge=0.03, cost=0.90, days=1)
-            p["kalshi"]["settle_time"] = settle
-            p["polymarket"]["settle_time"] = settle
+            p["a"]["settle_time"] = settle
+            p["b"]["settle_time"] = settle
             pairs.append(p)
         a.apply_orders(port, a.plan_allocation(port, pairs, cfg)[0])
         a.settle(port, mismatch_loss_rate=0.75, seed=7)

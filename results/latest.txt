@@ -3,315 +3,364 @@
 sized at 100 contracts per leg
 ====================================================================================================
 
-[1] confidence 0.62   mid gap +3.0pp   edge +1.00pp  <-- CANDIDATE, VERIFY RULES
-    +4.6% annualised over 83 days of locked capital
-    kalshi       5.5%  [bid   4.0 / ask   7.1]  vol 23,602
-      What states will redistrict before the 2026 Congressional elections? — Wisconsin
-      KXREDISTRICTING-26-WI  https://kalshi.com/markets/kxredistricting-26
-    polymarket   2.5%  [bid   2.4 / ask   2.6]  vol 22,576
-      Will Wisconsin use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-wisconsin-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.51  rules 0.66  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9900 per contract for $1.00 at settlement (both venues' fees included)
+[1] confidence 0.52   mid gap +8.5pp   edge +5.55pp  <-- CANDIDATE, VERIFY RULES
+    +178.1% annualised over 20 days of locked capital
+    polymarket  11.5%  [bid  10.0 / ask  13.0]  vol 6,767
+      Will Aaron Guckian win the 2026 Rhode Island Governor Republican primary election?
+      0x576df0755393742f793a7a67016d482cd37ef1ef9d0623cc14fddafcadf1d83f  https://polymarket.com/market/will-aaron-guckian-win-the-2026-rhode-island-governor-republican-primary-election
+    predictit    3.0%  [bid   2.0 / ask   4.0]  vol 0
+      Which party will win the 2026 US Senate election in Rhode Island? — Republican
+      8382-33034  https://www.predictit.org/markets/detail/8382/Which-party-will-win-the-2026-US-Senate-election-in-Rhode-Island
+    similarity: title 0.56  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9445 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[2] confidence 0.63   mid gap -3.0pp   edge +0.87pp  <-- CANDIDATE, VERIFY RULES
-    +4.0% annualised over 83 days of locked capital
-    kalshi       2.6%  [bid   1.2 / ask   4.0]  vol 57,612
-      What states will redistrict before the 2026 Congressional elections? — Georgia
-      KXREDISTRICTING-26-GA  https://kalshi.com/markets/kxredistricting-26
-    polymarket   5.6%  [bid   5.4 / ask   5.9]  vol 8,469
-      Will Georgia use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-georgia-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.53  rules 0.66  dates 0.90  (6d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9913 per contract for $1.00 at settlement (both venues' fees included)
+[2] confidence 0.50   mid gap -7.2pp   edge +4.55pp  <-- CANDIDATE, VERIFY RULES
+    +130.3% annualised over 20 days of locked capital
+    polymarket  89.2%  [bid  88.5 / ask  90.0]  vol 16,017
+      Will Helena Foulkes win the 2026 Rhode Island Governor Democratic primary election?
+      0xf125ec027b10cfc944d90a8e12558a05191214a774501382d85bed74773a2b23  https://polymarket.com/market/will-helena-foulkes-win-the-2026-rhode-island-governor-democratic-primary-election
+    predictit   96.5%  [bid  95.0 / ask  98.0]  vol 0
+      Which party will win the 2026 US Senate election in Rhode Island? — Democratic
+      8382-33035  https://www.predictit.org/markets/detail/8382/Which-party-will-win-the-2026-US-Senate-election-in-Rhode-Island
+    similarity: title 0.53  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9545 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[3] confidence 0.60   mid gap +2.1pp   edge +1.08pp  <-- CANDIDATE, VERIFY RULES
-    +2.8% annualised over 143 days of locked capital
-    kalshi       2.4%  [bid   1.5 / ask   3.2]  vol 67,276
-      Will Vladimir Padrino López be the head of state of Venezuela on Dec 31, 2026?
-      KXVENEZUELALEADER-26DEC31-VLOP  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.2%  [bid   0.2 / ask   0.3]  vol 816,452
-      Will Vladimir Padrino López be the leader of Venezuela end of 2026?
-      https://polymarket.com/market/will-vladimir-padrino-lpez-be-the-leader-of-venezuela-end-of-2026
-    similarity: title 0.81  rules 0.45  dates 0.75  (8d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9892 per contract for $1.00 at settlement (both venues' fees included)
+[3] confidence 0.61   mid gap -20.9pp   edge +7.89pp  <-- CANDIDATE, VERIFY RULES
+    +90.9% annualised over 46 days of locked capital
+    polymarket   8.1%  [bid   1.8 / ask  14.5]  vol 6,159
+      Will Flávio Bolsonaro win the first round of the 2026 Brazilian presidential election b…
+      0x3a539f4052dc3340948b9f56119fbee92919f7bf9bb3cc73fd7feeb310d030d4  https://polymarket.com/market/will-flvio-bolsonaro-win-the-first-round-of-the-2026-brazilian-presidential-election-by-510
+    predictit   29.0%  [bid  20.0 / ask  38.0]  vol 0
+      Who will win the 2026 Brazilian presidential election? — Flávio Bolsonaro
+      8544-33624  https://www.predictit.org/markets/detail/8544/Who-will-win-the-2026-Brazilian-presidential-election
+    similarity: title 0.82  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9211 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side states a numeric threshold, the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[4] confidence 0.46   mid gap -3.2pp   edge +1.74pp  <-- CANDIDATE, VERIFY RULES
+    +61.5% annualised over 13 days of locked capital
+    polymarket   0.8%  [bid   0.3 / ask   1.2]  vol 13,368
+      Will Mike Kennealy win the 2026 Massachusetts Governor Republican primary election?
+      0x36796df689a799e37af4db95c281bebd0f0fb370c25c0874a39a2184d92f7231  https://polymarket.com/market/will-mike-kennealy-win-the-2026-massachusetts-governor-republican-primary-election
+    predictit    4.0%  [bid   3.0 / ask   5.0]  vol 0
+      Which party will win the 2026 US Senate election in Massachusetts? — Republican
+      8381-33032  https://www.predictit.org/markets/detail/8381/Which-party-will-win-the-2026-US-Senate-election-in-Massachusetts
+    similarity: title 0.47  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9826 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[5] confidence 0.52   mid gap +11.0pp   edge +9.47pp  <-- CANDIDATE, VERIFY RULES
+    +60.9% annualised over 76 days of locked capital
+    polymarket  12.5%  [bid  12.0 / ask  13.0]  vol 2,244,580
+      2026 Balance of Power: R Senate, R House — Republicans Sweep
+      0xc5eae79d1ffe716572353962eb926b1e3964c500a4880a7a94f58408218ee76b  https://polymarket.com/market/2026-balance-of-power-r-senate-r-house-537
+    predictit    1.5%  [bid   1.0 / ask   2.0]  vol 0
+      What will be the balance of power in Congress after the 2026 election? — R House, D Sen…
+      8600-33869  https://www.predictit.org/markets/detail/8600/What-will-be-the-balance-of-power-in-Congress-after-the-2026-election
+    similarity: title 0.56  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9053 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[6] confidence 0.61   mid gap +3.9pp   edge +3.19pp  <-- CANDIDATE, VERIFY RULES
+    +29.1% annualised over 46 days of locked capital
+    polymarket   4.9%  [bid   4.4 / ask   5.4]  vol 22,575
+      Will Romeu Zema finish in third place in the first round of the 2026 Brazilian presiden…
+      0x7452216a57a3bef85439820c7bb421fa38e5a5ecff8c43658de515c1df70151e  https://polymarket.com/market/will-romeu-zema-finish-in-third-place-in-the-first-round-of-the-2026-brazilian-presidential-election
+    predictit    1.0%  [bid   n/a / ask   1.0]  vol 0
+      Who will win the 2026 Brazilian presidential election? — Romeu Zema
+      8544-33625  https://www.predictit.org/markets/detail/8544/Who-will-win-the-2026-Brazilian-presidential-election
+    similarity: title 0.69  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9681 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[7] confidence 0.65   mid gap -7.0pp   edge +4.75pp  <-- CANDIDATE, VERIFY RULES
+    +26.2% annualised over 76 days of locked capital
+    polymarket  49.5%  [bid  49.0 / ask  50.0]  vol 1,609,418
+      Will the Republican Party control the Senate after the 2026 Midterm elections?
+      0x86bfb53af7250a40928975c551d12c185b762fa4ce0b40c6a64a50c946d72587  https://polymarket.com/market/will-the-republican-party-control-the-senate-after-the-2026-midterm-elections
+    predictit   56.5%  [bid  56.0 / ask  57.0]  vol 0
+      Which party will control the Senate after the 2026 election? — Republican
+      8155-31948  https://www.predictit.org/markets/detail/8155/Which-party-will-control-the-Senate-after-the-2026-election
+    similarity: title 0.74  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9525 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[8] confidence 0.56   mid gap +14.0pp   edge +7.52pp  <-- CANDIDATE, VERIFY RULES
+    +23.4% annualised over 135 days of locked capital
+    polymarket  24.5%  [bid  24.0 / ask  25.0]  vol 30,444
+      Will Trump meet with Changpeng Zhao in 2026?
+      0xfad2167317be5a9fa5f7d2290494692d320a93dced3a4160119894d48e960a40  https://polymarket.com/market/will-trump-meet-with-changpeng-zhao-in-2026
+    predictit   10.5%  [bid   6.0 / ask  15.0]  vol 0
+      Will Trump meet with Pope Leo in 2026?
+      8707-34445  https://www.predictit.org/markets/detail/8707/Will-Trump-meet-with-Pope-Leo-in-2026
+    similarity: title 0.46  rules n/a   dates 1.00  (1d apart)
+    trade: buy YES predictit / NO polymarket — pay $0.9248 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[9] confidence 0.52   mid gap -2.8pp   edge +0.74pp  <-- CANDIDATE, VERIFY RULES
+    +22.5% annualised over 13 days of locked capital
+    polymarket   0.8%  [bid   0.3 / ask   1.2]  vol 13,368
+      Will Mike Kennealy win the 2026 Massachusetts Governor Republican primary election?
+      0x36796df689a799e37af4db95c281bebd0f0fb370c25c0874a39a2184d92f7231  https://polymarket.com/market/will-mike-kennealy-win-the-2026-massachusetts-governor-republican-primary-election
+    predictit    3.5%  [bid   2.0 / ask   5.0]  vol 0
+      Which party will win the 2026 election for governor of Massachusetts? — Republican
+      8403-33079  https://www.predictit.org/markets/detail/8403/Which-party-will-win-the-2026-election-for-governor-of-Massachusetts
+    similarity: title 0.56  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9926 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[10] confidence 0.46   mid gap -10.4pp   edge +6.67pp  <-- CANDIDATE, VERIFY RULES
+    +20.5% annualised over 135 days of locked capital
+    polymarket   8.1%  [bid   6.3 / ask   9.8]  vol 70,455
+      Record crypto liquidation in 2026?
+      0x8aea4707af4ca2b029db4143bb020f0c8bf95d2c0d088186009471fb588f2f4a  https://polymarket.com/market/record-crypto-liquidation-in-2026
+    predictit   18.5%  [bid  17.0 / ask  20.0]  vol 0
+      Will crypto regulation (Clarity Act) be enacted in 2026?
+      8804-34867  https://www.predictit.org/markets/detail/8804/Will-crypto-regulation-(Clarity-Act)-be-enacted-in-2026
+    similarity: title 0.32  rules n/a   dates 1.00  (0d apart)
+    trade: buy YES polymarket / NO predictit — pay $0.9333 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[11] confidence 0.46   mid gap +7.5pp   edge +4.47pp  <-- CANDIDATE, VERIFY RULES
+    +13.1% annualised over 135 days of locked capital
+    polymarket  12.5%  [bid  12.0 / ask  13.0]  vol 10,436
+      Will Elon Musk tweet "Hyperliquid" by December 31, 2026?
+      0xf52464db4365608f6f135248f83cd1e98e6232bce4917e6cd7d94d911ca8f51a  https://polymarket.com/market/will-elon-musk-tweet-about-hyperliquid-by-december-31-2026
+    predictit    5.0%  [bid   3.0 / ask   7.0]  vol 0
+      Will Trump pardon Elon Musk in 2026?
+      8549-33641  https://www.predictit.org/markets/detail/8549/Will-Trump-pardon-Elon-Musk-in-2026
+    similarity: title 0.46  rules n/a   dates 1.00  (0d apart)
+    trade: buy YES predictit / NO polymarket — pay $0.9553 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side states a numeric threshold, the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[12] confidence 0.52   mid gap +6.1pp   edge +4.66pp  <-- CANDIDATE, VERIFY RULES
+    +13.0% annualised over 142 days of locked capital
+    kalshi      10.5%  [bid  10.0 / ask  11.0]  vol 145,024
+      Will Taylor Swift be the #1 most streamed Artist on the 2026 Spotify Wrapped Top 10 Art…
+      KXTOPARTISTUSA-26-TAY  https://kalshi.com/markets/kxtopartistusa-26
+    polymarket   4.5%  [bid   4.4 / ask   4.5]  vol 40,678
+      Will Taylor Swift be the top artist for 2026?
+      0x0afa82ff8cb4dcf8c7a248ccaf438597619d3a6a4e4463adb109e1a1034d6e10  https://polymarket.com/market/will-taylor-swift-be-the-top-spotify-artist-for-2026
+    similarity: title 0.55  rules 0.67  dates 0.75  (8d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9534 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[4] confidence 0.45   mid gap -4.0pp   edge +0.80pp  <-- CANDIDATE, VERIFY RULES
-    +2.1% annualised over 144 days of locked capital
-    kalshi      22.5%  [bid  22.0 / ask  23.0]  vol 284,927
-      Will Miami win the MLS Cup?
-      KXMLSCUP-26-MIA  https://kalshi.com/markets/kxmlscup-26
-    polymarket  26.5%  [bid  26.0 / ask  27.0]  vol 89,706
-      Will Inter Miami CF win the 2026 MLS Cup?
-      https://polymarket.com/market/will-inter-miami-cf-win-the-2026-mls-cup
-    similarity: title 0.65  rules 0.45  dates 0.50  (21d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9920 per contract for $1.00 at settlement (both venues' fees included)
+[13] confidence 0.64   mid gap +7.5pp   edge +4.60pp  <-- CANDIDATE, VERIFY RULES
+    +12.9% annualised over 142 days of locked capital
+    kalshi      17.0%  [bid  16.0 / ask  18.0]  vol 1,192,054
+      Will Delcy Rodríguez be the head of state of Venezuela on Dec 31, 2026?
+      KXVENEZUELALEADER-26DEC31-DROD  https://kalshi.com/markets/kxvenezuelaleader-26dec31
+    polymarket   9.5%  [bid   9.0 / ask  10.0]  vol 186,164
+      Delcy Rodríguez out as leader of Venezuela by December 31, 2026?
+      0x4cba9bf990370fac4f6ec2b3513d7dbbc5c569a88d01180ccda081cccc57eed7  https://polymarket.com/market/delcy-rodrguez-out-as-leader-of-venezuela-by-december-31-2026-148-853
+    similarity: title 0.75  rules 0.37  dates 0.75  (8d apart)
+    trade: buy YES polymarket / NO kalshi — pay $0.9540 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+
+[14] confidence 0.61   mid gap -22.1pp   edge +7.48pp  <-- CANDIDATE, VERIFY RULES
+    +11.8% annualised over 254 days of locked capital
+    polymarket   2.4%  [bid   2.3 / ask   2.4]  vol 1,842,524
+      Will Jordan Bardella win the 2027 French presidential election?
+      0x1166388a24a3f2a9bb0a45956bdb205c70f0ecafb8539e277a57adf022e306be  https://polymarket.com/market/will-jordan-bardella-win-the-2027-french-presidential-election
+    predictit   24.5%  [bid  10.0 / ask  39.0]  vol 0
+      Who will win the next French presidential election? — Jordan Bardella
+      8766-34691  https://www.predictit.org/markets/detail/8766/Who-will-win-the-next-French-presidential-election
+    similarity: title 0.85  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9252 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side names a year the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[5] confidence 0.53   mid gap +1.8pp   edge +0.68pp  <-- CANDIDATE, VERIFY RULES
-    +1.8% annualised over 137 days of locked capital
-    kalshi       5.5%  [bid   5.0 / ask   6.0]  vol 59,327
-      New pandemic by 2026? — In Dec 31, 2026
-      KXNEWOUTBREAKEBOLA-26  https://kalshi.com/markets/kxnewoutbreakebola-26
-    polymarket   3.8%  [bid   3.7 / ask   3.8]  vol 692,078
-      Ebola pandemic in 2026?
-      https://polymarket.com/market/ebola-pandemic-in-2026
-    similarity: title 0.59  rules 0.49  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9932 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[6] confidence 0.70   mid gap +1.8pp   edge +0.67pp  <-- CANDIDATE, VERIFY RULES
-    +1.8% annualised over 138 days of locked capital
-    kalshi       4.8%  [bid   4.1 / ask   5.4]  vol 241,176
-      Will Barack Obama be arrested before Jan 2027?
-      KXARREST-27JAN-BOM  https://kalshi.com/markets/kxarrest-27jan
-    polymarket   2.9%  [bid   2.9 / ask   3.0]  vol 20,682
-      Obama arrested before 2027?
-      https://polymarket.com/market/obama-arrested-before-2027
-    similarity: title 0.76  rules 0.48  dates 0.90  (3d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9933 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[7] confidence 0.50   mid gap +3.1pp   edge +0.57pp  <-- CANDIDATE, VERIFY RULES
-    +1.5% annualised over 137 days of locked capital
-    kalshi       6.5%  [bid   5.0 / ask   8.0]  vol 14,758
-      What kind of device will Jony Ive and OpenAI announce? — Phone
-      KXOAIHARDWARE-27-PHONE  https://kalshi.com/markets/kxoaihardware-27
-    polymarket   3.4%  [bid   2.9 / ask   3.9]  vol 56,397
-      Will OpenAI announce a phone in 2026?
-      https://polymarket.com/market/will-openai-announce-a-phone-in-2026
-    similarity: title 0.56  rules 0.51  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9943 per contract for $1.00 at settlement (both venues' fees included)
+[15] confidence 0.55   mid gap +41.5pp   edge +6.51pp  <-- CANDIDATE, VERIFY RULES
+    +10.7% annualised over 241 days of locked capital
+    polymarket  84.5%  [bid  84.0 / ask  85.0]  vol 14,330
+      Will Édouard Philippe be on the ballot for the 2027 French presidential election?
+      0xb73b23b135bb40488931bbb9bde2a0a01c288c5896afb6d8baafcb3984840b35  https://polymarket.com/market/will-douard-philippe-be-on-the-ballot-for-the-2027-french-presidential-election
+    predictit   43.0%  [bid  10.0 / ask  76.0]  vol 0
+      Who will win the next French presidential election? — Édouard Philippe
+      8766-34692  https://www.predictit.org/markets/detail/8766/Who-will-win-the-next-French-presidential-election
+    similarity: title 0.77  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9349 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side names a year the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[8] confidence 0.56   mid gap +1.5pp   edge +0.59pp  <-- CANDIDATE, VERIFY RULES
-    +1.5% annualised over 144 days of locked capital
-    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 15,444
-      Will New York City win the MLS Cup?
-      KXMLSCUP-26-NYC  https://kalshi.com/markets/kxmlscup-26
-    polymarket   2.1%  [bid   2.0 / ask   2.1]  vol 698,074
-      Will New York City FC win the 2026 MLS Cup?
-      https://polymarket.com/market/will-new-york-city-fc-win-the-2026-mls-cup
-    similarity: title 0.87  rules 0.43  dates 0.50  (21d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9941 per contract for $1.00 at settlement (both venues' fees included)
+[16] confidence 0.54   mid gap -5.2pp   edge +0.55pp  <-- CANDIDATE, VERIFY RULES
+    +10.4% annualised over 20 days of locked capital
+    polymarket  89.2%  [bid  88.5 / ask  90.0]  vol 16,017
+      Will Helena Foulkes win the 2026 Rhode Island Governor Democratic primary election?
+      0xf125ec027b10cfc944d90a8e12558a05191214a774501382d85bed74773a2b23  https://polymarket.com/market/will-helena-foulkes-win-the-2026-rhode-island-governor-democratic-primary-election
+    predictit   94.5%  [bid  91.0 / ask  98.0]  vol 0
+      Which party will win the 2026 election for governor of Rhode Island? — Democratic
+      8404-33082  https://www.predictit.org/markets/detail/8404/Which-party-will-win-the-2026-election-for-governor-of-Rhode-Island
+    similarity: title 0.59  rules n/a   dates 0.50
+    trade: buy YES polymarket / NO predictit — pay $0.9945 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
-    ! one side names a year the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[9] confidence 0.49   mid gap -2.0pp   edge +0.49pp  <-- CANDIDATE, VERIFY RULES
-    +1.3% annualised over 137 days of locked capital
-    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 1,815,035
-      Who will be the next the head of state or government of Iran? — Reza Pahlavi
-      KXPAHLAVIHEAD-27JAN-RPAH  https://kalshi.com/markets/kxpahlavihead-27jan
-    polymarket   5.5%  [bid   5.0 / ask   6.0]  vol 2,197,373
-      Will Reza Pahlavi enter Iran by December 31?
-      https://polymarket.com/market/will-reza-pahlavi-enter-iran-by-december-31-898-927
-    similarity: title 0.52  rules 0.48  dates 1.00  (2d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9951 per contract for $1.00 at settlement (both venues' fees included)
+[17] confidence 0.63   mid gap +21.0pp   edge +6.60pp  <-- CANDIDATE, VERIFY RULES
+    +10.3% annualised over 254 days of locked capital
+    polymarket  38.5%  [bid  37.0 / ask  40.0]  vol 5,423
+      Will Jean-Luc Mélenchon advance to the second round of the next French presidential ele…
+      0x7c9c13d0adc82f9e5aaa774e75ac1d08d181367c4cda17fa641293cec7d13bc2  https://polymarket.com/market/will-jean-luc-mlenchon-advance-to-the-second-round-of-the-next-french-presidential-election
+    predictit   17.5%  [bid   6.0 / ask  29.0]  vol 0
+      Who will win the next French presidential election? — Jean-Luc Mélenchon
+      8766-34693  https://www.predictit.org/markets/detail/8766/Who-will-win-the-next-French-presidential-election
+    similarity: title 0.72  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9340 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[10] confidence 0.56   mid gap +2.1pp   edge +0.51pp  <-- CANDIDATE, VERIFY RULES
-    +1.3% annualised over 143 days of locked capital
-    kalshi       2.5%  [bid   1.0 / ask   3.9]  vol 413,280
-      Will Edmundo González Urrutia be the head of state of Venezuela on Dec 31, 2026?
-      KXVENEZUELALEADER-26DEC31-EGON  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.4%  [bid   0.3 / ask   0.4]  vol 1,213,296
-      Will Edmundo González be the leader of Venezuela end of 2026?
-      https://polymarket.com/market/will-edmundo-gonzlez-be-the-leader-of-venezuela-end-of-2026
-    similarity: title 0.74  rules 0.43  dates 0.75  (8d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9949 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[11] confidence 0.47   mid gap +3.1pp   edge +0.48pp  <-- CANDIDATE, VERIFY RULES
-    +1.3% annualised over 138 days of locked capital
-    kalshi       5.0%  [bid   3.0 / ask   7.0]  vol 13,082
-      Will Donald Trump receive a presidential pardon before Jan 1, 2027?
-      KXTRUMPPARDON-27JAN01-DJT  https://kalshi.com/markets/kxtrumppardon-27jan01
-    polymarket   1.9%  [bid   1.7 / ask   2.2]  vol 52,917
-      Will Trump pardon Elon Musk before 2027?
-      https://polymarket.com/market/will-trump-pardon-elon-musk-before-2027
-    similarity: title 0.49  rules 0.51  dates 0.90  (3d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9952 per contract for $1.00 at settlement (both venues' fees included)
+[18] confidence 0.48   mid gap -6.0pp   edge +3.64pp  <-- CANDIDATE, VERIFY RULES
+    +10.0% annualised over 142 days of locked capital
+    kalshi      10.5%  [bid  10.0 / ask  11.0]  vol 145,024
+      Will Taylor Swift be the #1 most streamed Artist on the 2026 Spotify Wrapped Top 10 Art…
+      KXTOPARTISTUSA-26-TAY  https://kalshi.com/markets/kxtopartistusa-26
+    polymarket  16.5%  [bid  16.0 / ask  17.0]  vol 5,409
+      Will Taylor Swift be the second most streamed artist for 2026?
+      0x237836238bd3617cad615ca21f3367366dc6d93bcb4336b49ad5a180a6c91c6f  https://polymarket.com/market/will-taylor-swift-be-the-second-most-streamed-spotify-artist-for-2026-20260609190428835
+    similarity: title 0.57  rules 0.40  dates 0.90  (7d apart)
+    trade: buy YES kalshi / NO polymarket — pay $0.9636 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
 
-[12] confidence 0.72   mid gap +1.8pp   edge +0.45pp  <-- CANDIDATE, VERIFY RULES
-    +1.2% annualised over 137 days of locked capital
-    kalshi       6.3%  [bid   6.1 / ask   6.5]  vol 26,958,533
-      Will the U.S. confirm that aliens exist before 2027?
-      KXALIENS-27  https://kalshi.com/markets/kxaliens-27
-    polymarket   4.5%  [bid   4.0 / ask   5.0]  vol 36,886,693
-      Will the US confirm that aliens exist before 2027? — December 31
-      https://polymarket.com/market/will-the-us-confirm-that-aliens-exist-before-2027-789-924-249
-    similarity: title 0.91  rules 0.56  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9955 per contract for $1.00 at settlement (both venues' fees included)
+[19] confidence 0.53   mid gap -6.0pp   edge +4.10pp  <-- CANDIDATE, VERIFY RULES
+    +9.6% annualised over 167 days of locked capital
+    kalshi      14.5%  [bid  14.0 / ask  15.0]  vol 13,378,468
+      Will Republicans win the House in 2026? — Republican Party
+      CONTROLH-2026-R  https://kalshi.com/markets/controlh-2026
+    predictit   20.5%  [bid  20.0 / ask  21.0]  vol 0
+      Which party will win the House in the 2026 election? — Republican
+      8157-31952  https://www.predictit.org/markets/detail/8157/Which-party-will-win-the-House-in-the-2026-election
+    similarity: title 0.58  rules n/a   dates 0.50
+    trade: buy YES kalshi / NO predictit — pay $0.9590 per contract for $1.00 at settlement (both venues' fees included)
     ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
-[13] confidence 0.63   mid gap +1.4pp   edge +0.27pp  <-- CANDIDATE, VERIFY RULES
-    +1.2% annualised over 83 days of locked capital
-    kalshi      97.6%  [bid  97.4 / ask  97.9]  vol 18,730
-      What states will redistrict before the 2026 Congressional elections? — North Carolina
-      KXREDISTRICTING-26-NC  https://kalshi.com/markets/kxredistricting-26
-    polymarket  96.2%  [bid  95.6 / ask  96.8]  vol 11,909
-      Will North Carolina use a new congressional map for the 2026 United States midterm elec…
-      https://polymarket.com/market/will-north-carolina-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.53  rules 0.65  dates 0.90  (6d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9973 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[14] confidence 0.64   mid gap +1.1pp   edge +0.43pp  <-- CANDIDATE, VERIFY RULES
-    +1.2% annualised over 137 days of locked capital
-    kalshi       4.5%  [bid   4.4 / ask   4.6]  vol 1,481,302
-      Will Trump buy Greenland? — Before 2027
-      KXGREENLAND-29-27  https://kalshi.com/markets/kxgreenland-29
-    polymarket   3.4%  [bid   3.3 / ask   3.5]  vol 35,301,838
-      Will Trump acquire Greenland before 2027?
-      https://polymarket.com/market/will-trump-acquire-greenland-before-2027
-    similarity: title 0.66  rules 0.39  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9957 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[15] confidence 0.54   mid gap -3.0pp   edge +0.38pp  <-- CANDIDATE, VERIFY RULES
-    +1.0% annualised over 144 days of locked capital
-    kalshi       4.5%  [bid   4.0 / ask   5.0]  vol 50,954
-      Will Costco change the price of hot dog combo before 2027?
-      COSTCOHOTDOG-27  https://kalshi.com/markets/costcohotdog
-    polymarket   7.5%  [bid   6.0 / ask   9.0]  vol 10,299
-      Costco increases hotdog price before 2027?
-      https://polymarket.com/market/costco-increases-hotdog-price-before-2027
-    similarity: title 0.41  rules 0.66  dates 0.75  (9d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9962 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[16] confidence 0.46   mid gap +1.3pp   edge +0.38pp  <-- CANDIDATE, VERIFY RULES
-    +1.0% annualised over 144 days of locked capital
-    kalshi       3.5%  [bid   3.0 / ask   4.0]  vol 44,025
-      Will Houston win the MLS Cup?
-      KXMLSCUP-26-HOU  https://kalshi.com/markets/kxmlscup-26
-    polymarket   2.2%  [bid   2.2 / ask   2.3]  vol 474,925
-      Will Houston Dynamo FC win the 2026 MLS Cup?
-      https://polymarket.com/market/will-houston-dynamo-fc-win-the-2026-mls-cup
-    similarity: title 0.68  rules 0.44  dates 0.50  (21d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9962 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side names a year the other does not
-
-[17] confidence 0.59   mid gap +1.2pp   edge +0.25pp  <-- CANDIDATE, VERIFY RULES
-    +0.6% annualised over 143 days of locked capital
-    kalshi       1.4%  [bid   0.5 / ask   2.2]  vol 16,869
-      Will Dinorah Figuera be the head of state of Venezuela on Dec 31, 2026?
-      KXVENEZUELALEADER-26DEC31-DFIG  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.1%  [bid   0.1 / ask   0.2]  vol 2,974,334
-      Will Dinorah Figuera be the leader of Venezuela end of 2026?
-      https://polymarket.com/market/will-dinorah-figuera-be-the-leader-of-venezuela-end-of-2026
-    similarity: title 0.79  rules 0.45  dates 0.75  (8d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9975 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[18] confidence 0.53   mid gap -3.0pp   edge +0.18pp  <-- CANDIDATE, VERIFY RULES
-    +0.5% annualised over 137 days of locked capital
-    kalshi       6.5%  [bid   5.0 / ask   7.9]  vol 573,182
-      Will the Fed cut rates more than 25 bps in 2026?
-      KXLARGECUT-26  https://kalshi.com/markets/kxlargecut-26
-    polymarket   9.5%  [bid   9.0 / ask  10.0]  vol 2,547,710
-      Will 1 Fed rate cut happen in 2026? — 1 (25 bps)
-      https://polymarket.com/market/will-1-fed-rate-cut-happen-in-2026
-    similarity: title 0.63  rules 0.39  dates 1.00  (2d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9982 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! secondary figures differ ([1.0])
-
-[19] confidence 0.55   mid gap +1.2pp   edge +0.15pp  <-- CANDIDATE, VERIFY RULES
-    +0.4% annualised over 137 days of locked capital
-    kalshi       4.6%  [bid   4.1 / ask   5.1]  vol 500,969
-      Will the United States acquire any part of Greenland before Jan 1, 2027? — Before 2027
-      KXGREENTERRITORY-29-27  https://kalshi.com/markets/kxgreenterritory-29
-    polymarket   3.4%  [bid   3.3 / ask   3.5]  vol 35,301,838
-      Will Trump acquire Greenland before 2027?
-      https://polymarket.com/market/will-trump-acquire-greenland-before-2027
-    similarity: title 0.67  rules 0.41  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9985 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side states a numeric threshold, the other does not
-
-[20] confidence 0.63   mid gap -2.2pp   edge +0.07pp  <-- CANDIDATE, VERIFY RULES
-    +0.3% annualised over 83 days of locked capital
-    kalshi       2.3%  [bid   1.0 / ask   3.5]  vol 85,240
-      What states will redistrict before the 2026 Congressional elections? — Indiana
-      KXREDISTRICTING-26-IND  https://kalshi.com/markets/kxredistricting-26
-    polymarket   4.5%  [bid   4.0 / ask   5.0]  vol 34,456
-      Will Indiana use a new congressional map for the 2026 United States midterm elections?
-      https://polymarket.com/market/will-indiana-use-a-new-congressional-map-for-the-2026-united-states-midterm-elections
-    similarity: title 0.53  rules 0.66  dates 0.90  (6d apart)
-    trade: buy YES kalshi / NO polymarket — pay $0.9993 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-
-[21] confidence 0.53   mid gap +3.5pp   edge +0.05pp  <-- CANDIDATE, VERIFY RULES
-    +0.1% annualised over 137 days of locked capital
-    kalshi      10.0%  [bid   9.0 / ask  11.0]  vol 57,164
-      What kind of device will Jony Ive and OpenAI announce? — Earbuds/Headphones
-      KXOAIHARDWARE-27-EARBUDS  https://kalshi.com/markets/kxoaihardware-27
-    polymarket   6.5%  [bid   5.0 / ask   8.0]  vol 122,353
-      Will OpenAI announce earbuds or headphones in 2026? — Earbuds/Headphones
-      https://polymarket.com/market/will-openai-announce-earbuds-or-headphones-in-2026
-    similarity: title 0.63  rules 0.46  dates 1.00  (2d apart)
-    trade: buy YES polymarket / NO kalshi — pay $0.9995 per contract for $1.00 at settlement (both venues' fees included)
-    ! priced from top of book only — size not verified against real depth
-    ! one side names a year the other does not
-
-[22] confidence 0.55   mid gap -10.0pp   edge +0.00pp
-    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 23,812
-      Will Los Angeles G win the MLS Cup?
-      KXMLSCUP-26-LAG  https://kalshi.com/markets/kxmlscup-26
-    polymarket  11.5%  [bid  11.0 / ask  12.0]  vol 47,344
-      Will Los Angeles FC win the 2026 MLS Cup?
-      https://polymarket.com/market/will-los-angeles-fc-win-the-2026-mls-cup
-    similarity: title 0.85  rules 0.43  dates 0.50  (21d apart)
-    no two-sided liquidity at requested size
-    ! one side names a year the other does not
-
-[23] confidence 0.53   mid gap -8.8pp   edge +0.00pp
-    kalshi       1.5%  [bid   1.0 / ask   2.0]  vol 1,302,080
-      Will Max Verstappen win the F1 Drivers Championship?
-      KXF1-26-MV  https://kalshi.com/markets/kxf1-26
-    polymarket  10.3%  [bid  10.3 / ask  10.4]  vol 25,839
-      Will Max Verstappen retire from F1 in 2026?
-      https://polymarket.com/market/will-max-verstappen-retire-from-f1-in-2026
-    similarity: title 0.70  rules 0.48  dates 0.75  (9d apart)
-    no two-sided liquidity at requested size
-    ! one side names a year the other does not
-
-[24] confidence 0.49   mid gap +9.0pp   edge +0.00pp
-    kalshi      12.0%  [bid  10.0 / ask  14.0]  vol 9,409
-      Will any Republican member of Congress calls on Trump to be removed as President throug…
-      KXMOCTRUMP25-26-JAN01  https://kalshi.com/markets/kxmoctrump25-26
-    polymarket   3.0%  [bid   2.9 / ask   3.2]  vol 49,110
-      Trump removed via 25th Amendment before 2027?
-      https://polymarket.com/market/trump-removed-via-25th-amendment-before-2027
-    similarity: title 0.59  rules 0.50  dates 0.75  (9d apart)
-    no two-sided liquidity at requested size
-    ! secondary figures differ ([1.0])
-
-[25] confidence 0.61   mid gap +3.8pp   edge +0.00pp
+[20] confidence 0.61   mid gap +3.8pp   edge +3.31pp  <-- CANDIDATE, VERIFY RULES
+    +9.0% annualised over 142 days of locked capital
     kalshi       4.0%  [bid   4.0 / ask   4.1]  vol 84,912
       Will Diosdado Cabello Rondón be the head of state of Venezuela on Dec 31, 2026?
       KXVENEZUELALEADER-26DEC31-DRON  https://kalshi.com/markets/kxvenezuelaleader-26dec31
-    polymarket   0.3%  [bid   0.2 / ask   0.4]  vol 2,088,319
+    polymarket   0.3%  [bid   0.2 / ask   0.4]  vol 2,088,411
       Will Diosdado Cabello Rondón be the leader of Venezuela end of 2026?
-      https://polymarket.com/market/will-diosdado-cabello-rondn-be-the-leader-of-venezuela-end-of-2026
+      0xd46931250308613b38c1fdad5cfeaeaae05818bc445668ad4629f12e92aac690  https://polymarket.com/market/will-diosdado-cabello-rondn-be-the-leader-of-venezuela-end-of-2026
     similarity: title 0.83  rules 0.44  dates 0.75  (8d apart)
-    no two-sided liquidity at requested size
+    trade: buy YES polymarket / NO kalshi — pay $0.9669 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
     ! one side states a numeric threshold, the other does not
+
+[21] confidence 0.53   mid gap +4.5pp   edge +1.76pp  <-- CANDIDATE, VERIFY RULES
+    +8.8% annualised over 76 days of locked capital
+    polymarket  46.5%  [bid  46.0 / ask  47.0]  vol 2,598,923
+      2026 Balance of Power: D Senate, D House — Democrats Sweep
+      0x16c63b7cc37f012b9f59ee164ec03877914c701d06d48291ae8d6fc08a088b0d  https://polymarket.com/market/2026-balance-of-power-d-senate-d-house-949
+    predictit   42.0%  [bid  41.0 / ask  43.0]  vol 0
+      What will be the balance of power in Congress after the 2026 election? — D House, R Sen…
+      8600-33867  https://www.predictit.org/markets/detail/8600/What-will-be-the-balance-of-power-in-Congress-after-the-2026-election
+    similarity: title 0.57  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9824 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[22] confidence 0.65   mid gap +4.0pp   edge +1.75pp  <-- CANDIDATE, VERIFY RULES
+    +8.8% annualised over 76 days of locked capital
+    polymarket  49.5%  [bid  49.0 / ask  50.0]  vol 2,283,821
+      Will the Democratic Party control the Senate after the 2026 Midterm elections?
+      0x307a1ed89d60b61002dd5bbf00e1408c5ed2ab3fcdb056191ca7ef9bc34d38f3  https://polymarket.com/market/will-the-democratic-party-control-the-senate-after-the-2026-midterm-elections
+    predictit   45.5%  [bid  45.0 / ask  46.0]  vol 0
+      Which party will control the Senate after the 2026 election? — Democratic
+      8155-31947  https://www.predictit.org/markets/detail/8155/Which-party-will-control-the-Senate-after-the-2026-election
+    similarity: title 0.74  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9825 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[23] confidence 0.52   mid gap +4.0pp   edge +2.76pp  <-- CANDIDATE, VERIFY RULES
+    +7.9% annualised over 134 days of locked capital
+    polymarket   5.5%  [bid   5.0 / ask   6.0]  vol 10,558,723
+      Will the US acquire part of Greenland in 2026?
+      0x890fc3ba40458db0b67560691aa1597344c2a0560d18e80f586a4b35f510b4ce  https://polymarket.com/market/will-the-us-acquire-any-part-of-greenland-in-2026
+    predictit    1.5%  [bid   1.0 / ask   2.0]  vol 0
+      Will the US purchase Greenland in 2026?
+      8493-33416  https://www.predictit.org/markets/detail/8493/Will-the-US-purchase-Greenland-in-2026
+    similarity: title 0.56  rules n/a   dates 0.50
+    trade: buy YES predictit / NO polymarket — pay $0.9724 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[24] confidence 0.45   mid gap -8.0pp   edge +2.79pp  <-- CANDIDATE, VERIFY RULES
+    +7.9% annualised over 136 days of locked capital
+    kalshi       2.5%  [bid   2.0 / ask   3.0]  vol 35,750
+      Who will win the Nobel Peace Prize? — Pope Leo XIV
+      KXNOBELPEACE-27-PLEO  https://kalshi.com/markets/kxnobelpeace-26
+    predictit   10.5%  [bid   6.0 / ask  15.0]  vol 0
+      Will Trump meet with Pope Leo in 2026?
+      8707-34445  https://www.predictit.org/markets/detail/8707/Will-Trump-meet-with-Pope-Leo-in-2026
+    similarity: title 0.48  rules n/a   dates 1.00  (1d apart)
+    trade: buy YES kalshi / NO predictit — pay $0.9721 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! one side names a year the other does not
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
+
+[25] confidence 0.63   mid gap -13.0pp   edge +2.59pp  <-- CANDIDATE, VERIFY RULES
+    +7.3% annualised over 135 days of locked capital
+    polymarket   2.0%  [bid   1.8 / ask   2.3]  vol 1,003,173
+      Will Trump be impeached by end of 2026?
+      0x4c8ceef9b9c0a27b6b4efa7c398ece4a5eeda76502f722de398c232abefe2ede  https://polymarket.com/market/will-trump-be-impeached-by-december-31-2026
+    predictit   15.0%  [bid   5.0 / ask  25.0]  vol 0
+      Will any US federal judge be impeached in 2026?
+      8870-35257  https://www.predictit.org/markets/detail/8870/Will-any-US-federal-judge-be-impeached-in-2026
+    similarity: title 0.56  rules n/a   dates 1.00  (1d apart)
+    trade: buy YES polymarket / NO predictit — pay $0.9741 per contract for $1.00 at settlement (both venues' fees included)
+    ! priced from top of book only — size not verified against real depth
+    ! resolution text missing on one venue — rules not compared
+    ! PredictIt takes 10% of net profit and 5% on withdrawal -- realised edge is below the figure shown
 
 Confidence is a text-similarity estimate. It is not evidence that the two
 contracts resolve on the same criteria, and a mismatch there turns a hedge

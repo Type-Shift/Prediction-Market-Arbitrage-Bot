@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T22:45:51Z",
+  "generated_at": "2026-08-18T14:56:43Z",
   "scanner_version": "2.0",
   "thresholds": {
     "min_confidence": 0.45,
@@ -12,7 +12,8 @@
     "sort": "annualised",
     "max_days_out": 400,
     "min_volume_kalshi": 50,
-    "min_volume_poly": 5000
+    "min_volume_poly": 5000,
+    "min_volume_predictit": 0.0
   },
   "weights": {
     "title": 0.55,
@@ -35,30 +36,39 @@
       "geopolitics": 0.0,
       "world": 0.0,
       "world events": 0.0
-    }
+    },
+    "predictit": 0.0
   },
   "funnel": {
     "kalshi_scanned": 30000,
-    "kalshi_quoted": 29995,
+    "kalshi_quoted": 29975,
     "kalshi_fetched": 4000,
-    "poly_fetched": 4000,
-    "kalshi_usable": 3909,
-    "poly_usable": 3969,
-    "ladder_members": 3412,
-    "candidate_pairs": 148321,
-    "scored": 148321,
+    "kalshi_usable": 3906,
+    "polymarket_fetched": 4000,
+    "polymarket_usable": 3963,
+    "predictit_fetched": 624,
+    "predictit_usable": 596,
+    "ladder_members": 3946,
+    "candidate_pairs": 252559,
+    "scored": 252559,
     "skipped_prefilter": 0,
-    "skipped_ladder": 99305,
-    "above_confidence": 139,
-    "scoring_seconds": 10.2,
+    "skipped_ladder": 167405,
+    "above_confidence": 330,
+    "scoring_seconds": 13.8,
     "depth_priced": 15,
-    "hidden_implausible": 11,
+    "hidden_implausible": 63,
     "kept": 25
   },
   "dropped": {
-    "kalshi: settles beyond 400d horizon": 91,
-    "kalshi: DROPPED (any reason)": 91,
-    "poly: binary but not yes/no labelled": 31
+    "kalshi: settles beyond 400d horizon": 94,
+    "kalshi: DROPPED (any reason)": 94,
+    "poly: binary but not yes/no labelled": 32,
+    "predictit: DROPPED (any reason)": 19,
+    "predictit: settles beyond 400d horizon": 10,
+    "predictit: no live quote": 9,
+    "predictit: already past settlement": 9,
+    "polymarket: already past settlement": 5,
+    "polymarket: DROPPED (any reason)": 5
   },
   "kept": 25,
   "errors": []
